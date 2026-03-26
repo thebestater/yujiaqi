@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>换装小屋</title>
+<style>
+/* ===== 设计变量 ===== */
+:root {
+  --bg-deep:     #0a0a15;
+  --bg-primary:  #1a1a2e;
+  --bg-card:     rgba(255,255,255,0.06);
+  --accent:      #ff85c2;
+  --accent-dim:  #e0609e;
+  --accent-soft: rgba(255,133,194,0.18);
+  --glow:        0 0 22px rgba(255,133,194,0.45);
+  --glow-strong: 0 0 42px rgba(255,133,194,0.65);
+  --text:        #fff0f8;
+  --text-dim:    rgba(255,240,248,0.6);
+  --radius:      18px;
+  --radius-sm:   10px;
+  --trans:       0.22s ease;
+}
+
+/* ===== 重置 & 基础 ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; }
+body {
+  background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  color: var(--text);
+  user-select: none;
+}
+
+/* ===== 固定导航 ===== */
+.back-link {
+  position: fixed; top: 14px; left: 16px; z-index: 999;
+  color: var(--text-dim); text-decoration: none;
+  font-size: 13px; padding: 6px 12px;
+  background: rgba(255,255,255,0.08); border-radius: 20px;
+  transition: var(--trans);
+}
+.back-link:hover { color: var(--accent); background: var(--accent-soft); }
+
+.mute-btn {
+  position: fixed; top: 10px; right: 16px; z-index: 999;
+  background: rgba(255,255,255,0.08); border: none; border-radius: 50%;
+  width: 40px; height: 40px; font-size: 18px; cursor: pointer;
+  transition: var(--trans); color: var(--text);
+}
+.mute-btn:hover { background: var(--accent-soft); }
+
+/* ===== 屏幕管理 ===== */
+.screen {
+  position: fixed; inset: 0;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow: hidden;
+}
+.screen.active { display: flex; }
+
+/* ===== 通用按钮 ===== */
+.btn {
+  padding: 12px 28px; border: none; border-radius: 30px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+  transition: var(--trans); font-family: inherit;
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dim));
+  color: #fff; box-shadow: var(--glow);
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: var(--glow-strong); }
+.btn-secondary {
+  background: rgba(255,255,255,0.1); color: var(--text);
+  border: 1px solid rgba(255,255,255,0.18);
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.18); transform: translateY(-1px); }
+.btn-accent {
+  background: rgba(255,133,194,0.22); color: var(--accent);
+  border: 1px solid rgba(255,133,194,0.4); font-size: 13px; padding: 9px 16px;
+}
+.btn-accent:hover { background: rgba(255,133,194,0.35); transform: translateY(-1px); }
+
+/* ===== 标题屏 ===== */
+#s-title .title-wrap {
+  text-align: center; padding: 20px;
+}
+.game-title {
+  font-size: clamp(42px, 8vw, 72px);
+  background: linear-gradient(135deg, #fff 20%, var(--accent) 60%, #ffb3d9 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 20px rgba(255,133,194,0.5));
+  margin-bottom: 10px;
+}
+.game-subtitle { color: var(--text-dim); font-size: 16px; margin-bottom: 30px; }
+.sparkle-row { font-size: 36px; letter-spacing: 12px; margin-bottom: 20px; animation: sparkle-pulse 2s ease-in-out infinite; }
+@keyframes sparkle-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.7;transform:scale(1.12)} }
+
+.char-preview-row {
+  display: flex; gap: 24px; justify-content: center; margin-top: 28px;
+}
+.char-preview-card {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 14px 18px; background: var(--bg-card);
+  border-radius: var(--radius); border: 1px solid rgba(255,133,194,0.2);
+  cursor: pointer; transition: var(--trans);
+}
+.char-preview-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: var(--glow); }
+.char-preview-name { font-size: 14px; color: var(--text-dim); }
+
+/* ===== 角色选择屏 ===== */
+#s-chars { gap: 28px; padding-top: 60px; }
+.screen-title {
+  font-size: 26px; color: var(--text);
+  text-shadow: 0 0 20px rgba(255,133,194,0.4);
+  margin-bottom: 8px;
+}
+.char-card-row { display: flex; gap: 24px; flex-wrap: wrap; justify-content: center; }
+.char-card {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 24px 20px 20px; background: var(--bg-card);
+  border-radius: var(--radius); border: 2px solid rgba(255,255,255,0.1);
+  cursor: pointer; transition: var(--trans); width: 170px;
+}
+.char-card:hover { border-color: var(--accent); transform: translateY(-4px); box-shadow: var(--glow); }
+.char-card.selected { border-color: var(--accent); box-shadow: var(--glow-strong); }
+.char-card-name { font-size: 18px; font-weight: 700; color: var(--text); }
+.char-card-desc { font-size: 12px; color: var(--text-dim); text-align: center; line-height: 1.5; }
+.char-card-tag {
+  font-size: 11px; padding: 3px 10px; border-radius: 12px;
+  background: var(--accent-soft); color: var(--accent);
+}
+
+/* ===== 换装室 ===== */
+#s-dress { padding: 0; }
+.dressing-layout {
+  display: flex; width: 100%; height: 100%; max-width: 900px; padding: 60px 16px 16px;
+  gap: 16px; align-items: stretch;
+}
+
+/* 左侧：服装面板 */
+.outfit-panel {
+  width: 300px; min-width: 240px; display: flex; flex-direction: column; gap: 10px;
+}
+.cat-tabs {
+  display: flex; gap: 6px; flex-wrap: wrap;
+}
+.cat-tab {
+  padding: 7px 13px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.15);
+  font-size: 12px; cursor: pointer; transition: var(--trans);
+  background: rgba(255,255,255,0.06); color: var(--text-dim);
+  white-space: nowrap;
+}
+.cat-tab:hover { border-color: rgba(255,133,194,0.4); color: var(--text); }
+.cat-tab.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+
+.item-grid {
+  flex: 1; overflow-y: auto; display: grid;
+  grid-template-columns: repeat(3, 1fr); gap: 8px;
+  padding-right: 4px; align-content: start;
+}
+.item-grid::-webkit-scrollbar { width: 4px; }
+.item-grid::-webkit-scrollbar-track { background: transparent; }
+.item-grid::-webkit-scrollbar-thumb { background: rgba(255,133,194,0.3); border-radius: 4px; }
+
+.item-card {
+  display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 8px 4px; border-radius: var(--radius-sm);
+  border: 2px solid rgba(255,255,255,0.08);
+  cursor: pointer; transition: var(--trans); background: rgba(255,255,255,0.04);
+}
+.item-card:hover { border-color: rgba(255,133,194,0.4); transform: translateY(-2px); }
+.item-card.selected { border-color: var(--accent); background: var(--accent-soft); }
+.item-color {
+  width: 52px; height: 52px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; font-size: 28px;
+}
+.item-name { font-size: 11px; color: var(--text-dim); text-align: center; line-height: 1.3; }
+.item-card.selected .item-name { color: var(--accent); }
+
+/* 右侧：角色展示 */
+.char-display {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: space-between; gap: 10px;
+}
+.char-stage {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.char-stage svg { filter: drop-shadow(0 8px 24px rgba(255,133,194,0.25)); }
+
+.outfit-summary {
+  display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+  max-height: 48px; overflow: hidden;
+}
+.outfit-tag {
+  font-size: 11px; padding: 3px 9px; border-radius: 12px;
+  background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(255,133,194,0.3);
+}
+
+.dressing-actions {
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+}
+
+/* ===== 场景选择屏 ===== */
+#s-scenes { gap: 20px; padding-top: 60px; padding: 60px 20px 20px; }
+.scene-card-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+  max-width: 780px; width: 100%;
+}
+.scene-card {
+  border-radius: var(--radius); overflow: hidden; cursor: pointer;
+  transition: var(--trans); border: 2px solid rgba(255,255,255,0.1);
+  aspect-ratio: 3/2;
+}
+.scene-card:hover { transform: translateY(-4px); box-shadow: 0 8px 28px rgba(0,0,0,0.4); border-color: var(--accent); }
+.scene-card-bg {
+  width: 100%; height: 100%; display: flex; flex-direction: column;
+  align-items: center; justify-content: flex-end; padding-bottom: 10px;
+  gap: 4px; position: relative; overflow: hidden;
+}
+.scene-card-emoji { font-size: 28px; line-height: 1; }
+.scene-card-name { font-size: 12px; font-weight: 600; color: #fff; text-shadow: 0 1px 6px rgba(0,0,0,0.6); }
+.scene-nav { display: flex; gap: 12px; }
+
+/* ===== 场景互动屏 ===== */
+#s-play { padding: 0; justify-content: flex-end; }
+.scene-stage {
+  position: absolute; inset: 0;
+  overflow: hidden;
+}
+.scene-deco { position: absolute; inset: 0; pointer-events: none; }
+.scene-deco .clickable { pointer-events: all; cursor: pointer; }
+
+#scene-char {
+  position: absolute; left: 50%; bottom: 13%;
+  transform: translateX(-50%);
+  transform-origin: bottom center;
+  cursor: pointer; transition: filter 0.2s; z-index: 10;
+}
+#scene-char:hover { filter: brightness(1.08) drop-shadow(0 0 14px rgba(255,133,194,0.6)); }
+
+.scene-controls {
+  position: relative; z-index: 20;
+  display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  padding: 12px 16px 16px;
+  background: linear-gradient(0deg, rgba(10,10,21,0.92) 0%, rgba(10,10,21,0.6) 70%, transparent 100%);
+  width: 100%;
+}
+
+/* ===== 角色动画 ===== */
+@keyframes anim-wave {
+  0%,100% { transform: translateX(-50%) rotate(0deg); }
+  20%     { transform: translateX(-50%) rotate(-9deg) translateY(-5px); }
+  40%     { transform: translateX(-50%) rotate(9deg); }
+  60%     { transform: translateX(-50%) rotate(-6deg) translateY(-3px); }
+  80%     { transform: translateX(-50%) rotate(5deg); }
+}
+@keyframes anim-jump {
+  0%,100% { transform: translateX(-50%) translateY(0) scaleY(1); }
+  10%     { transform: translateX(-50%) translateY(0) scaleY(0.88); }
+  35%     { transform: translateX(-50%) translateY(-70px) scaleY(1.06); }
+  60%     { transform: translateX(-50%) translateY(-35px) scaleY(1); }
+  80%     { transform: translateX(-50%) translateY(-8px) scaleY(1); }
+  92%     { transform: translateX(-50%) translateY(0) scaleY(0.94); }
+}
+@keyframes anim-spin {
+  0%   { transform: translateX(-50%) rotate(0deg) scaleX(1); }
+  25%  { transform: translateX(-50%) rotate(90deg) scaleX(0.65); }
+  50%  { transform: translateX(-50%) rotate(180deg) scaleX(1); }
+  75%  { transform: translateX(-50%) rotate(270deg) scaleX(0.65); }
+  100% { transform: translateX(-50%) rotate(360deg) scaleX(1); }
+}
+#scene-char.anim-wave { animation: anim-wave 1.0s ease-in-out; }
+#scene-char.anim-jump { animation: anim-jump 0.85s ease-in-out; }
+#scene-char.anim-spin { animation: anim-spin 0.95s ease-in-out; }
+
+/* 场景装饰动画 */
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+@keyframes sway  { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+@keyframes bubble-rise { 0%{transform:translateY(0);opacity:0.8} 100%{transform:translateY(-120px);opacity:0} }
+@keyframes twinkle { 0%,100%{opacity:0.5;transform:scale(0.9)} 50%{opacity:1;transform:scale(1.1)} }
+@keyframes swim { 0%,100%{transform:translateX(0) scaleX(1)} 50%{transform:translateX(18px) scaleX(-1)} }
+@keyframes sparkle-deco { 0%{transform:scale(1) rotate(0)} 50%{transform:scale(1.4) rotate(20deg)} 100%{transform:scale(1) rotate(0)} }
+@keyframes confetti-fall { 0%{transform:translateY(-30px) rotate(0)} 100%{transform:translateY(100vh) rotate(360deg)} }
+
+/* ===== 过渡动画 ===== */
+@keyframes screen-in { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+.screen.active { animation: screen-in 0.3s ease; }
+
+/* ===== 响应式 ===== */
+@media (max-width: 680px) {
+  .dressing-layout { flex-direction: column; padding-top: 54px; }
+  .outfit-panel { width: 100%; min-width: unset; max-height: 52vh; }
+  .char-display { min-height: 200px; }
+  .item-grid { grid-template-columns: repeat(4, 1fr); }
+  .scene-card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+
+<a class="back-link" href="../index.html">← 游戏大厅</a>
+<button class="mute-btn" id="btnMute">🔊</button>
+
+<!-- ███ 屏幕1：标题 ███ -->
+<div id="s-title" class="screen active">
+  <div class="title-wrap">
+    <div class="sparkle-row">✨ 💖 ✨</div>
+    <h1 class="game-title">换装小屋</h1>
+    <p class="game-subtitle">为你的小伙伴搭配最美造型，探索梦幻场景</p>
+    <button class="btn btn-primary" style="font-size:17px;padding:14px 40px;margin-bottom:24px" onclick="goTo('chars')">开始游戏 ✨</button>
+    <div class="char-preview-row" id="titlePreviews"></div>
+  </div>
+</div>
+
+<!-- ███ 屏幕2：角色选择 ███ -->
+<div id="s-chars" class="screen">
+  <div class="screen-title">✨ 选择你的角色</div>
+  <div class="char-card-row" id="charCardRow"></div>
+  <button class="btn btn-secondary" style="margin-top:16px" onclick="goTo('title')">← 返回</button>
+</div>
+
+<!-- ███ 屏幕3：换装室 ███ -->
+<div id="s-dress" class="screen">
+  <div class="dressing-layout">
+    <div class="outfit-panel">
+      <div class="cat-tabs" id="catTabs"></div>
+      <div class="item-grid" id="itemGrid"></div>
+    </div>
+    <div class="char-display">
+      <div class="char-stage" id="dressingStage"></div>
+      <div class="outfit-summary" id="outfitSummary"></div>
+      <div class="dressing-actions">
+        <button class="btn btn-primary" onclick="goTo('scenes')">选场景 ✨</button>
+        <button class="btn btn-secondary" onclick="clearOutfit()">🔄 重置</button>
+        <button class="btn btn-secondary" onclick="goTo('chars')">← 换角色</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ███ 屏幕4：场景选择 ███ -->
+<div id="s-scenes" class="screen">
+  <div class="screen-title">🌈 选择场景</div>
+  <div class="scene-card-grid" id="sceneCardGrid"></div>
+  <div class="scene-nav" style="margin-top:14px">
+    <button class="btn btn-secondary" onclick="goTo('dress')">← 返回换装</button>
+  </div>
+</div>
+
+<!-- ███ 屏幕5：场景互动 ███ -->
+<div id="s-play" class="screen">
+  <div class="scene-stage" id="sceneStage">
+    <div class="scene-deco" id="sceneDeco"></div>
+    <div id="scene-char" onclick="onCharClick()"></div>
+  </div>
+  <div class="scene-controls">
+    <button class="btn btn-accent" onclick="triggerAnim('wave')">👋 挥手</button>
+    <button class="btn btn-accent" onclick="triggerAnim('jump')">⬆ 跳跃</button>
+    <button class="btn btn-accent" onclick="triggerAnim('spin')">💫 转圈</button>
+    <button class="btn btn-secondary" onclick="goTo('scenes')">🌄 换场景</button>
+    <button class="btn btn-secondary" onclick="goTo('dress')">👗 换装</button>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// 角色数据
+// ================================================================
+const CHARS = [
+  {
+    id: 0, name: '小米', tag: '活泼可爱',
+    desc: '黑发亮眼，活力满满的小女孩',
+    skin: '#FFDBB4', eyeColor: '#3d2b1f',
+    hairBack: `
+      <ellipse cx="80" cy="48" rx="43" ry="46" fill="#1a0a00"/>
+      <path d="M37,42 Q25,92 27,150" stroke="#1a0a00" stroke-width="20" fill="none" stroke-linecap="round"/>
+      <path d="M123,42 Q135,92 133,150" stroke="#1a0a00" stroke-width="20" fill="none" stroke-linecap="round"/>`,
+    hairFront: `
+      <path d="M44,22 Q80,4 116,22 Q112,52 103,60 Q96,38 80,36 Q64,38 57,60 Q48,52 44,22Z" fill="#1a0a00"/>`,
+  },
+  {
+    id: 1, name: '艾拉', tag: '温柔甜美',
+    desc: '金色卷发，甜甜的微笑小公主',
+    skin: '#FFE0BD', eyeColor: '#5a3200',
+    hairBack: `
+      <ellipse cx="80" cy="46" rx="45" ry="48" fill="#D4A017"/>
+      <path d="M35,38 Q20,82 24,155" stroke="#D4A017" stroke-width="24" fill="none" stroke-linecap="round"/>
+      <path d="M125,38 Q140,82 136,155" stroke="#D4A017" stroke-width="24" fill="none" stroke-linecap="round"/>`,
+    hairFront: `
+      <path d="M44,18 Q62,2 80,5 Q98,2 116,18 Q110,50 102,58 Q96,36 88,38 Q80,44 72,38 Q64,36 58,58 Q50,50 44,18Z" fill="#D4A017"/>
+      <path d="M60,36 Q56,54 58,64" stroke="#c58c10" stroke-width="4" fill="none" stroke-linecap="round"/>
+      <path d="M100,36 Q104,54 102,64" stroke="#c58c10" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+  },
+  {
+    id: 2, name: '小星', tag: '魔法精灵',
+    desc: '紫发飘飘，会魔法的神秘精灵',
+    skin: '#F0E6FF', eyeColor: '#4a006a',
+    wings: `
+      <path d="M30,132 Q-6,98 8,164 Q16,192 33,180 Q22,164 27,150Z" fill="rgba(196,152,255,0.58)" stroke="#b084d0" stroke-width="1.5"/>
+      <path d="M130,132 Q166,98 152,164 Q144,192 127,180 Q138,164 133,150Z" fill="rgba(196,152,255,0.58)" stroke="#b084d0" stroke-width="1.5"/>`,
+    hairBack: `
+      <ellipse cx="80" cy="44" rx="43" ry="47" fill="#9B59B6"/>
+      <path d="M37,36 Q22,80 26,148" stroke="#9B59B6" stroke-width="20" fill="none" stroke-linecap="round"/>
+      <path d="M123,36 Q138,80 134,148" stroke="#9B59B6" stroke-width="20" fill="none" stroke-linecap="round"/>`,
+    hairFront: `
+      <path d="M80,9 Q72,1 61,9 Q73,20 78,17Z" fill="#c39bd3"/>
+      <path d="M80,9 Q80,-5 80,-1 Q82,14 80,17Z" fill="#9B59B6"/>
+      <path d="M80,9 Q88,1 99,9 Q87,20 82,17Z" fill="#c39bd3"/>
+      <path d="M44,24 Q80,7 116,24 Q110,54 102,60 Q96,36 80,34 Q64,36 58,60 Q50,54 44,24Z" fill="#9B59B6"/>`,
+  },
+];
+
+// ================================================================
+// 服装数据（30件）
+// ================================================================
+
+// 公共路径片段
+const P = {
+  bodice:  'M45,100 Q32,142 35,193 L125,193 Q128,142 115,100 Q100,93 80,91 Q60,93 45,100Z',
+  sL:      'M45,100 Q26,114 21,154 L35,158 Q38,135 47,118Z',
+  sR:      'M115,100 Q134,114 139,154 L125,158 Q122,135 113,118Z',
+  skirtB:  'M35,193 Q12,220 14,264 Q22,292 80,293 Q138,292 146,264 Q148,220 125,193Z',
+  skirtA:  'M35,193 Q20,228 22,268 Q33,286 80,287 Q127,286 138,268 Q140,228 125,193Z',
+  skirtM:  'M35,193 Q24,218 26,244 Q38,258 80,259 Q122,258 134,244 Q136,218 125,193Z',
+  pantL:   'M35,193 Q32,242 35,281 L67,281 Q69,242 70,193Z',
+  pantR:   'M90,193 Q91,242 93,281 L125,281 Q127,242 125,193Z',
+  shoeL:   'M49,280 Q40,291 38,297 L72,297 Q73,290 71,282Z',
+  shoeR:   'M88,282 Q87,290 89,297 L121,297 Q120,291 111,280Z',
+};
+
+function makeTop(fill, sl, sr, extra) {
+  sl = sl || fill; sr = sr || fill;
+  return `<path d="${P.bodice}" fill="${fill}"/><path d="${P.sL}" fill="${sl}"/><path d="${P.sR}" fill="${sr}"/>${extra||''}`;
+}
+function dress(bFill, sFill, skirtShape, extra) {
+  const sk = P[skirtShape||'skirtB'];
+  return makeTop(bFill) + `<path d="${sk}" fill="${sFill}"/>${extra||''}`;
+}
+
+const CLOTHING = {
+  dress: [
+    { name:'粉色公主裙', emoji:'👗', color:'#ff85c2',
+      svg: dress('#ff85c2','#ffb3d9','skirtB',
+        `<path d="M22,245 Q80,238 138,245 Q134,268 80,270 Q26,268 22,245Z" fill="rgba(255,255,255,0.4)"/>
+         <path d="M63,100 Q80,108 97,100" stroke="white" stroke-width="2.5" fill="none" stroke-linecap="round"/>`) },
+    { name:'星空连衣裙', emoji:'🌌', color:'#1a1a3a',
+      svg: dress('#1a1a3a','#2d2d5a','skirtA',
+        `<circle cx="55" cy="150" r="2" fill="white" opacity="0.8"/>
+         <circle cx="95" cy="135" r="2.5" fill="white"/>
+         <circle cx="70" cy="170" r="1.5" fill="white" opacity="0.7"/>
+         <circle cx="75" cy="220" r="2" fill="white"/>
+         <circle cx="100" cy="240" r="1.5" fill="white" opacity="0.8"/>
+         <circle cx="55" cy="260" r="2" fill="white" opacity="0.7"/>
+         <circle cx="110" cy="210" r="2.5" fill="white"/>`) },
+    { name:'格子背带裙', emoji:'🟥', color:'#e53935',
+      svg: dress('#e53935','#e53935','skirtA',
+        `<path d="M55,100 L55,193" stroke="white" stroke-width="2.5" opacity="0.5"/>
+         <path d="M72,100 L72,193" stroke="white" stroke-width="1.5" opacity="0.3"/>
+         <path d="M88,100 L88,193" stroke="white" stroke-width="1.5" opacity="0.3"/>
+         <path d="M105,100 L105,193" stroke="white" stroke-width="2.5" opacity="0.5"/>
+         <path d="M35,130 L125,130" stroke="white" stroke-width="2.5" opacity="0.5"/>
+         <path d="M35,158 L125,158" stroke="white" stroke-width="1.5" opacity="0.3"/>
+         <path d="M22,215 L138,220" stroke="white" stroke-width="2" opacity="0.4"/>
+         <path d="M20,238 L140,242" stroke="white" stroke-width="1.5" opacity="0.3"/>`) },
+    { name:'彩虹波点裙', emoji:'🌈', color:'#ff6b6b',
+      svg: `<path d="M45,100 Q32,142 35,193 L125,193 Q128,142 115,100 Q100,93 80,91 Q60,93 45,100Z" fill="#ff6b6b"/>
+            <path d="${P.sL}" fill="#ff6b6b"/><path d="${P.sR}" fill="#ff6b6b"/>
+            <path d="${P.skirtB}" fill="white"/>
+            <circle cx="60" cy="220" r="5" fill="#ff6b6b"/><circle cx="80" cy="210" r="5" fill="#6bdfff"/>
+            <circle cx="100" cy="222" r="5" fill="#ffd700"/><circle cx="50" cy="248" r="5" fill="#90ee90"/>
+            <circle cx="72" cy="255" r="5" fill="#dda0dd"/><circle cx="95" cy="250" r="5" fill="#ff9f40"/>
+            <circle cx="115" cy="238" r="5" fill="#ff6b6b"/><circle cx="45" cy="270" r="4" fill="#6bdfff"/>
+            <circle cx="80" cy="272" r="4" fill="#ffd700"/>` },
+    { name:'白色蕾丝裙', emoji:'🤍', color:'#f8f8f8',
+      svg: dress('#f8f8f8','#ffffff','skirtB',
+        `<path d="M63,100 Q80,108 97,100" stroke="#ffb3d9" stroke-width="2" fill="none" stroke-linecap="round"/>
+         <path d="M20,245 Q80,238 140,245" stroke="#ffb3d9" stroke-width="1" fill="none"/>
+         <path d="M20,255 Q35,248 50,255 Q65,248 80,255 Q95,248 110,255 Q125,248 140,255" stroke="#ddd" stroke-width="1.5" fill="none"/>`) },
+    { name:'蓝色海洋裙', emoji:'🌊', color:'#1e90ff',
+      svg: dress('#1e90ff','#00bfff','skirtA',
+        `<path d="M20,255 Q40,248 60,258 Q80,248 100,258 Q120,248 140,255" stroke="white" stroke-width="2" fill="none" opacity="0.7"/>
+         <path d="M18,268 Q40,260 62,270 Q82,260 102,270 Q122,260 142,268" stroke="white" stroke-width="1.5" fill="none" opacity="0.5"/>`) },
+    { name:'橙色阳光裙', emoji:'🌻', color:'#ff8c00',
+      svg: `<path d="${P.bodice}" fill="#ff8c00"/>
+            <path d="${P.sL}" fill="#ff8c00"/><path d="${P.sR}" fill="#ff8c00"/>
+            <path d="${P.skirtB}" fill="#ffa500"/>
+            <path d="M30,230 L150,235" stroke="#ffd700" stroke-width="4" opacity="0.5"/>
+            <path d="M22,258 L148,261" stroke="#ffd700" stroke-width="4" opacity="0.4"/>
+            <circle cx="80" cy="142" r="8" fill="#ffd700" opacity="0.5"/>` },
+  ],
+  top: [
+    { name:'条纹T恤', emoji:'👕', color:'#4fc3f7',
+      svg: `<path d="${P.bodice}" fill="#4fc3f7"/>
+            <path d="${P.sL}" fill="#4fc3f7"/><path d="${P.sR}" fill="#4fc3f7"/>
+            <path d="M34,130 Q80,126 126,130" stroke="white" stroke-width="3.5" fill="none"/>
+            <path d="M33,148 Q80,144 127,148" stroke="white" stroke-width="2.5" fill="none"/>
+            <path d="M33,166 Q80,162 127,166" stroke="white" stroke-width="3.5" fill="none"/>
+            <path d="M34,183 Q80,179 126,183" stroke="white" stroke-width="2.5" fill="none"/>` },
+    { name:'荷叶领衬衫', emoji:'🌸', color:'#f8f8f8',
+      svg: makeTop('#f8f8f8','#f8f8f8','#f8f8f8',
+        `<path d="M60,100 Q80,116 100,100 Q89,108 80,112 Q71,108 60,100Z" fill="#ffb3d9" opacity="0.7"/>
+         <path d="M60,100 Q80,116 100,100 Q90,110 80,114 Q70,110 60,100Z" fill="#ffb3d9" opacity="0.5"/>`) },
+    { name:'运动短款', emoji:'💪', color:'#ff4081',
+      svg: `<path d="M45,100 Q34,138 36,175 L124,175 Q126,138 115,100 Q100,93 80,91 Q60,93 45,100Z" fill="#ff4081"/>
+            <path d="${P.sL}" fill="#ff4081"/><path d="${P.sR}" fill="#ff4081"/>
+            <path d="M40,175 L120,175" stroke="white" stroke-width="2" opacity="0.6"/>` },
+    { name:'粉色毛衣', emoji:'🧶', color:'#e91e63',
+      svg: makeTop('#e91e63','#c2185b','#c2185b',
+        `<path d="M38,120 Q80,116 122,120" stroke="#c2185b" stroke-width="4" fill="none"/>
+         <path d="M38,132 Q80,128 122,132" stroke="#c2185b" stroke-width="3" fill="none"/>
+         <path d="M38,144 Q80,140 122,144" stroke="#c2185b" stroke-width="3" fill="none"/>
+         <path d="M63,99 Q80,106 97,99" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/>`) },
+    { name:'水手服', emoji:'⚓', color:'#1a237e',
+      svg: makeTop('#1a237e','#1a237e','#1a237e',
+        `<path d="M58,99 L80,128 L102,99 L115,108 L80,140 L45,108Z" fill="#283593"/>
+         <path d="M58,99 L80,128 L102,99" stroke="white" stroke-width="2" fill="none"/>
+         <path d="M45,108 L80,140 L115,108" stroke="white" stroke-width="1.5" fill="none"/>
+         <path d="M66,101 L80,118 L94,101" stroke="white" stroke-width="2.5" fill="none"/>`) },
+  ],
+  bottom: [
+    { name:'牛仔裤', emoji:'👖', color:'#5b8bd8',
+      svg: `<path d="${P.pantL}" fill="#5b8bd8"/>
+            <path d="${P.pantR}" fill="#5b8bd8"/>
+            <path d="M35,193 L125,193 L125,208 L35,208Z" fill="#4a7bc5"/>
+            <path d="M68,210 L72,280" stroke="#4a7bc5" stroke-width="2" fill="none"/>
+            <path d="M92,210 L90,280" stroke="#4a7bc5" stroke-width="2" fill="none"/>` },
+    { name:'蓬蓬裙', emoji:'🩱', color:'#ff85c2',
+      svg: `<path d="${P.skirtB}" fill="#ff85c2"/>
+            <path d="M22,244 Q80,236 138,244 Q134,266 80,268 Q26,266 22,244Z" fill="#ffb3d9" opacity="0.7"/>` },
+    { name:'格子短裙', emoji:'🟦', color:'#ef5350',
+      svg: `<path d="${P.skirtM}" fill="#ef5350"/>
+            <path d="M45,193 L45,259" stroke="white" stroke-width="2" opacity="0.5"/>
+            <path d="M65,193 L63,259" stroke="white" stroke-width="1.5" opacity="0.3"/>
+            <path d="M80,193 L80,259" stroke="white" stroke-width="2" opacity="0.5"/>
+            <path d="M95,193 L97,259" stroke="white" stroke-width="1.5" opacity="0.3"/>
+            <path d="M115,193 L115,259" stroke="white" stroke-width="2" opacity="0.5"/>
+            <path d="M26,215 Q80,211 134,215" stroke="white" stroke-width="2" fill="none" opacity="0.5"/>
+            <path d="M24,234 Q80,230 136,234" stroke="white" stroke-width="1.5" fill="none" opacity="0.3"/>` },
+    { name:'运动裤', emoji:'🏃', color:'#616161',
+      svg: `<path d="${P.pantL}" fill="#424242"/>
+            <path d="${P.pantR}" fill="#424242"/>
+            <path d="M35,193 L125,193 L125,206 L35,206Z" fill="#616161"/>
+            <path d="M49,200 L49,280" stroke="#757575" stroke-width="2.5" fill="none"/>
+            <path d="M111,200 L111,280" stroke="#757575" stroke-width="2.5" fill="none"/>` },
+    { name:'阔腿裤', emoji:'🤍', color:'#f5f5f5',
+      svg: `<path d="M30,193 Q24,242 26,280 L70,280 Q72,242 73,193Z" fill="#f5f5f5"/>
+            <path d="M90,193 Q91,242 93,280 L130,280 Q132,242 130,193Z" fill="#f5f5f5"/>
+            <path d="M30,193 L130,193 L130,207 L30,207Z" fill="#eeeeee"/>` },
+  ],
+  hat: [
+    { name:'金色皇冠', emoji:'👑', color:'#ffd700',
+      svg: `<path d="M52,26 L58,6 L80,18 L102,6 L108,26 L112,30 L48,30Z" fill="#ffd700"/>
+            <rect x="48" y="28" width="64" height="12" rx="3" fill="#ffb300"/>
+            <circle cx="80" cy="12" r="4" fill="#e91e63"/>
+            <circle cx="58" cy="8" r="3" fill="#2196f3"/>
+            <circle cx="102" cy="8" r="3" fill="#4caf50"/>` },
+    { name:'草帽', emoji:'👒', color:'#d7a664',
+      svg: `<path d="M28,34 Q80,24 132,34 Q128,44 80,46 Q32,44 28,34Z" fill="#c49a4e"/>
+            <path d="M50,34 Q80,20 110,34 Q108,48 80,50 Q52,48 50,34Z" fill="#d7a664"/>
+            <path d="M48,36 Q80,30 112,36" stroke="#c49a4e" stroke-width="1" fill="none"/>` },
+    { name:'棒球帽', emoji:'🧢', color:'#ff85c2',
+      svg: `<path d="M44,38 Q80,16 116,38 Q112,52 80,54 Q48,52 44,38Z" fill="#ff85c2"/>
+            <path d="M44,46 Q30,48 26,52 Q32,54 50,52" fill="#ff6aab"/>
+            <circle cx="80" cy="22" r="5" fill="#ff6aab"/>` },
+    { name:'贝雷帽', emoji:'🎨', color:'#9c27b0',
+      svg: `<ellipse cx="80" cy="28" rx="44" ry="22" fill="#9c27b0"/>
+            <ellipse cx="80" cy="36" rx="42" ry="5" fill="#7b1fa2"/>
+            <circle cx="110" cy="22" r="5" fill="#7b1fa2"/>` },
+  ],
+  hairAcc: [
+    { name:'大蝴蝶结', emoji:'🎀', color:'#ff4da6',
+      svg: `<path d="M58,16 Q46,6 42,14 Q46,22 62,20Z" fill="#ff4da6"/>
+            <path d="M102,16 Q114,6 118,14 Q114,22 98,20Z" fill="#ff4da6"/>
+            <circle cx="80" cy="17" r="7" fill="#ff1a80"/>
+            <path d="M62,19 Q80,14 98,19" stroke="#ff99cc" stroke-width="1.5" fill="none"/>` },
+    { name:'花环', emoji:'🌸', color:'#66bb6a',
+      svg: `<path d="M44,24 Q56,14 80,12 Q104,14 116,24" stroke="#66bb6a" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <circle cx="55" cy="19" r="5" fill="#ff85c2"/>
+            <circle cx="70" cy="14" r="4" fill="#ffeb3b"/>
+            <circle cx="80" cy="13" r="5" fill="#ff85c2"/>
+            <circle cx="90" cy="14" r="4" fill="#ffeb3b"/>
+            <circle cx="105" cy="19" r="5" fill="#ff85c2"/>` },
+    { name:'星星发带', emoji:'⭐', color:'#9c27b0',
+      svg: `<path d="M40,28 Q80,20 120,28" stroke="#ce93d8" stroke-width="5" fill="none" stroke-linecap="round"/>
+            <polygon points="80,10 82,18 90,18 84,23 86,31 80,26 74,31 76,23 70,18 78,18" fill="#ffd700"/>
+            <polygon points="55,20 56.5,25 62,25 57.5,28 59,33 55,30 51,33 52.5,28 48,25 53.5,25" fill="#ffd700" transform="scale(0.8) translate(13,4)"/>` },
+  ],
+  bag: [
+    { name:'爱心手提包', emoji:'💗', color:'#ff4da6',
+      svg: `<rect x="10" y="152" width="30" height="26" rx="6" fill="#ff4da6"/>
+            <path d="M22,146 Q22,142 25,142 Q28,142 28,146" stroke="#ff4da6" stroke-width="2" fill="none"/>
+            <path d="M14,163 Q20,155 25,163 Q20,170 14,163Z" fill="#fff" opacity="0.8"/>` },
+    { name:'星星包', emoji:'⭐', color:'#ffd700',
+      svg: `<rect x="10" y="150" width="30" height="28" rx="5" fill="#ffd700"/>
+            <path d="M22,144 Q22,140 25,140 Q28,140 28,144" stroke="#ffa000" stroke-width="2" fill="none"/>
+            <polygon points="25,156 26.5,161 32,161 27.5,164.5 29,169.5 25,166.5 21,169.5 22.5,164.5 18,161 23.5,161" fill="#fff" opacity="0.8"/>` },
+    { name:'薄荷背包', emoji:'🎒', color:'#4db6ac',
+      svg: `<rect x="12" y="110" width="26" height="32" rx="7" fill="#4db6ac"/>
+            <rect x="14" y="112" width="22" height="14" rx="4" fill="#80cbc4"/>
+            <circle cx="25" cy="133" r="3" fill="#00897b"/>
+            <path d="M16,103 Q25,100 34,103 Q34,112 25,112 Q16,112 16,103Z" fill="#4db6ac"/>` },
+  ],
+  shoes: [
+    { name:'公主鞋', emoji:'👠', color:'#ff85c2',
+      svg: `<path d="${P.shoeL}" fill="#ff85c2"/>
+            <path d="${P.shoeR}" fill="#ff85c2"/>
+            <path d="M49,285 Q56,280 67,282" stroke="#ff4da6" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <path d="M91,282 Q99,280 110,282" stroke="#ff4da6" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="55" cy="292" r="3" fill="#ff4da6"/>
+            <circle cx="104" cy="292" r="3" fill="#ff4da6"/>` },
+    { name:'运动鞋', emoji:'👟', color:'#ffffff',
+      svg: `<path d="M47,281 Q39,292 38,298 L73,298 Q74,291 71,282Z" fill="white"/>
+            <path d="M87,282 Q86,291 88,298 L122,298 Q121,291 112,281Z" fill="white"/>
+            <path d="M47,281 Q55,278 68,280" stroke="#ff85c2" stroke-width="2.5" fill="none"/>
+            <path d="M93,280 Q102,278 112,280" stroke="#ff85c2" stroke-width="2.5" fill="none"/>
+            <rect x="38" y="295" width="35" height="3" rx="1" fill="#eee"/>
+            <rect x="87" y="295" width="35" height="3" rx="1" fill="#eee"/>` },
+    { name:'蝴蝶凉鞋', emoji:'🩴', color:'#ffd54f',
+      svg: `<path d="M50,283 Q44,291 42,297 L70,297 Q71,290 69,283Z" fill="#ffd54f"/>
+            <path d="M90,283 Q89,290 91,297 L119,297 Q117,291 110,283Z" fill="#ffd54f"/>
+            <path d="M50,285 L63,290" stroke="#ffb300" stroke-width="2.5" fill="none"/>
+            <path d="M57,283 L57,295" stroke="#ffb300" stroke-width="2" fill="none"/>
+            <path d="M96,284 L109,289" stroke="#ffb300" stroke-width="2.5" fill="none"/>
+            <path d="M103,283 L103,295" stroke="#ffb300" stroke-width="2" fill="none"/>` },
+  ],
+};
+
+// 分类配置（用于tabs侧）
+const CATS = [
+  { key:'dress',   label:'连衣裙', emoji:'👗' },
+  { key:'top',     label:'上装',   emoji:'👕' },
+  { key:'bottom',  label:'下装',   emoji:'👖' },
+  { key:'hat',     label:'帽子',   emoji:'🎩' },
+  { key:'hairAcc', label:'发饰',   emoji:'🎀' },
+  { key:'bag',     label:'包包',   emoji:'👜' },
+  { key:'shoes',   label:'鞋子',   emoji:'👠' },
+];
+
+// ================================================================
+// 场景数据（8个）
+// ================================================================
+const SCENES = [
+  {
+    id:0, name:'公主城堡', emoji:'🏰',
+    cardBg: 'linear-gradient(160deg,#f4d0ff,#d8a8ff,#c8b0e8)',
+    stageBg: 'linear-gradient(175deg,#f8e0ff 0%,#e8c4ff 35%,#d4aaf0 65%,#c8b0e8 100%)',
+    floor:   'linear-gradient(0deg,#c4a0e0,#d8b8f0)',
+    deco: `
+      <div style="position:absolute;bottom:0;left:0;right:0;height:52%;background:linear-gradient(175deg,#d4b0ee,#c4a0de);overflow:hidden;">
+        <div style="position:absolute;top:-28px;left:8%;width:22%;height:92%;background:#c0a0d8;border-radius:8px 8px 0 0"></div>
+        <div style="position:absolute;top:-40px;left:37%;width:26%;height:108%;background:#cc9edf;border-radius:8px 8px 0 0"></div>
+        <div style="position:absolute;top:-28px;right:8%;width:22%;height:92%;background:#c0a0d8;border-radius:8px 8px 0 0"></div>
+        <div style="position:absolute;top:-46px;left:40%;width:20%;height:25%;background:#cc9edf;border-radius:50% 50% 0 0"></div>
+        <div class="clickable" onclick="decoClick(this,'sparkle')" style="position:absolute;bottom:30%;left:44%;width:12%;padding-top:20%;background:#87ceeb;border-radius:50% 50% 0 0;border:3px solid #9970aa;cursor:pointer;transition:transform 0.2s"></div>
+      </div>
+      <div style="position:absolute;top:-8px;left:16%;font-size:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:20px solid #ff0099"></div>
+      <div style="position:absolute;top:-14px;left:46%;font-size:0;width:0;height:0;border-left:10px solid transparent;border-right:10px solid transparent;border-bottom:24px solid #8800ff"></div>
+      <div style="position:absolute;top:-8px;right:16%;font-size:0;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:20px solid #ff6b00"></div>
+      <div style="position:absolute;top:5%;right:4%;font-size:26px;animation:float 3s ease-in-out infinite">⭐</div>
+      <div style="position:absolute;top:12%;left:6%;font-size:20px;animation:float 2.5s ease-in-out infinite 0.5s">✨</div>
+      <div style="position:absolute;top:6%;left:38%;font-size:22px;animation:float 3.5s ease-in-out infinite 1s">🌟</div>`,
+  },
+  {
+    id:1, name:'魔法森林', emoji:'🌲',
+    cardBg: 'linear-gradient(160deg,#0d2a1a,#2d6038,#1a4828)',
+    stageBg: 'linear-gradient(175deg,#0a1e10 0%,#163520 35%,#224832 65%,#1c3d28 100%)',
+    floor:   'linear-gradient(0deg,#1a3a20,#2a5030)',
+    deco: `
+      <div style="position:absolute;bottom:0;left:3%;width:18%;height:62%;background:#1a3a20;border-radius:50% 50% 10px 10px"></div>
+      <div style="position:absolute;bottom:0;right:3%;width:18%;height:56%;background:#1a3a20;border-radius:50% 50% 10px 10px"></div>
+      <div style="position:absolute;bottom:0;left:14%;width:12%;height:45%;background:#3d2b1f;border-radius:4px 4px 0 0"></div>
+      <div style="position:absolute;bottom:45%;left:10%;width:18%;height:20%;background:#2d5a2a;border-radius:50%"></div>
+      <div style="position:absolute;bottom:0;right:14%;width:12%;height:40%;background:#3d2b1f;border-radius:4px 4px 0 0"></div>
+      <div style="position:absolute;bottom:40%;right:10%;width:16%;height:18%;background:#2d5a2a;border-radius:50%"></div>
+      <div class="clickable" onclick="decoClick(this,'sparkle')" style="position:absolute;bottom:3%;left:28%;width:36px;height:46px;background:radial-gradient(#ff6b6b,#cc0000);border-radius:50% 50% 40% 40%;cursor:pointer;transition:filter 0.2s;filter:drop-shadow(0 0 8px rgba(255,100,100,0.8))"></div>
+      <div style="position:absolute;bottom:3%;right:28%;width:28px;height:36px;background:radial-gradient(#ffd700,#ff8800);border-radius:50% 50% 40% 40%;filter:drop-shadow(0 0 6px rgba(255,200,0,0.8))"></div>
+      <div style="position:absolute;top:15%;left:25%;font-size:10px;color:#90ee90;animation:float 2s infinite 0.3s">✦</div>
+      <div style="position:absolute;top:22%;right:22%;font-size:10px;color:#90ee90;animation:float 2.8s infinite 1s">✦</div>
+      <div style="position:absolute;top:35%;left:42%;font-size:12px;color:#c8ff90;animation:float 3.2s infinite 0.6s">✦</div>`,
+  },
+  {
+    id:2, name:'海边沙滩', emoji:'🏖️',
+    cardBg: 'linear-gradient(160deg,#87ceeb,#f0e68c,#deb887)',
+    stageBg: 'linear-gradient(175deg,#87ceeb 0%,#b3e5fc 30%,#e8f5e9 55%,#f5deb3 70%,#deb887 100%)',
+    floor:   'linear-gradient(0deg,#c8a060,#d4b078)',
+    deco: `
+      <div style="position:absolute;top:5%;right:10%;width:70px;height:70px;background:radial-gradient(#ffd700,#ff8800);border-radius:50%;box-shadow:0 0 30px rgba(255,200,0,0.6)"></div>
+      <div class="clickable" onclick="decoClick(this,'spin')" style="position:absolute;bottom:18%;right:8%;font-size:36px;cursor:pointer;transition:transform 0.2s;animation:sway 3s ease-in-out infinite">🐚</div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:22%;background:linear-gradient(0deg,#4a90d9,rgba(74,144,217,0.3));border-radius:50% 50% 0 0"></div>
+      <div style="position:absolute;bottom:19%;left:10%;color:white;font-size:28px;opacity:0.6;animation:sway 4s ease-in-out infinite">〰</div>
+      <div style="position:absolute;bottom:19%;left:28%;color:white;font-size:28px;opacity:0.5;animation:sway 3.5s ease-in-out infinite 0.5s">〰</div>
+      <div style="position:absolute;bottom:20%;left:12%;width:3px;height:55px;background:#8B4513"></div>
+      <div style="position:absolute;bottom:75%;left:8%;width:58px;height:38px;background:#ff6b35;border-radius:50% 50% 0 0;clip-path:polygon(50% 0,0% 100%,100% 100%)"></div>
+      <div style="position:absolute;bottom:73%;left:9%;width:55px;height:20px;background:#f8f8f8;border-radius:50%;"></div>`,
+  },
+  {
+    id:3, name:'春日公园', emoji:'🌸',
+    cardBg: 'linear-gradient(160deg,#c8f0ff,#b0e8c0,#90d870)',
+    stageBg: 'linear-gradient(175deg,#c8f0ff 0%,#b3e5fc 30%,#dcedc8 60%,#a5d6a7 100%)',
+    floor:   'linear-gradient(0deg,#66bb6a,#81c784)',
+    deco: `
+      <div style="position:absolute;bottom:0;left:8%;width:14%;height:55%;background:#5d4037;border-radius:6px 6px 0 0"></div>
+      <div style="position:absolute;bottom:52%;left:0%;width:30%;height:35%;background:radial-gradient(#ffb7c5,#ff8fab);border-radius:50%"></div>
+      <div class="clickable" onclick="decoClick(this,'sparkle')" style="position:absolute;top:10%;left:12%;font-size:22px;cursor:pointer;animation:float 3s infinite">🌸</div>
+      <div style="position:absolute;top:14%;left:22%;font-size:18px;animation:float 2.5s infinite 0.8s">🌸</div>
+      <div style="position:absolute;top:8%;left:30%;font-size:14px;animation:float 3.2s infinite 0.3s">🌸</div>
+      <div style="position:absolute;bottom:2%;right:18%;width:55px;height:26px;background:#8d6e63;border-radius:5px"></div>
+      <div style="position:absolute;bottom:5%;right:20%;width:50px;height:12px;background:#6d4c41;border-radius:3px"></div>
+      <div style="position:absolute;top:28%;right:10%;font-size:20px;animation:float 2.8s infinite 1.2s">🐦</div>
+      <div style="position:absolute;top:8%;right:35%;font-size:24px;animation:float 4s infinite 0.6s">☁️</div>`,
+  },
+  {
+    id:4, name:'生日派对', emoji:'🎂',
+    cardBg: 'linear-gradient(160deg,#fff0f8,#ffd6ec,#ffd870)',
+    stageBg: 'linear-gradient(175deg,#fff9e6 0%,#ffd6ec 35%,#fff0c8 65%,#ffe082 100%)',
+    floor:   'linear-gradient(0deg,#f8bbd0,#f48fb1)',
+    deco: `
+      <div style="position:absolute;top:4%;left:8%;font-size:34px;animation:float 2.6s infinite">🎈</div>
+      <div style="position:absolute;top:2%;left:20%;font-size:28px;animation:float 3s infinite 0.5s">🎈</div>
+      <div style="position:absolute;top:4%;right:8%;font-size:34px;animation:float 2.8s infinite 0.8s">🎈</div>
+      <div style="position:absolute;top:2%;right:20%;font-size:28px;animation:float 3.2s infinite 0.3s">🎈</div>
+      <div class="clickable" onclick="decoClick(this,'sparkle')" style="position:absolute;bottom:18%;right:12%;cursor:pointer;transition:transform .2s">
+        <div style="width:54px;height:44px;background:linear-gradient(0deg,#f8bbd0,#fff);border-radius:5px 5px 0 0;border:2px solid #f48fb1;display:flex;align-items:center;justify-content:center;font-size:22px">🍰</div>
+        <div style="width:54px;height:14px;background:#f48fb1;border-radius:0 0 5px 5px"></div>
+      </div>
+      <div style="position:absolute;top:15%;left:5%;font-size:18px">🎊</div>
+      <div style="position:absolute;top:18%;right:5%;font-size:18px">🎉</div>
+      <div style="position:absolute;top:10%;left:42%;font-size:16px;animation:float 3.5s infinite 1s">🎀</div>`,
+  },
+  {
+    id:5, name:'咖啡小屋', emoji:'☕',
+    cardBg: 'linear-gradient(160deg,#6d4c41,#4e342e,#3e2723)',
+    stageBg: 'linear-gradient(175deg,#3e2723 0%,#4e342e 40%,#5d4037 70%,#4e342e 100%)',
+    floor:   'linear-gradient(0deg,#3e2723,#4e342e)',
+    deco: `
+      <div style="position:absolute;top:0;left:0;right:0;height:55%;background:rgba(255,230,200,0.08);"></div>
+      <div style="position:absolute;top:5%;left:15%;width:32%;height:55%;background:#2e1a10;border-radius:8px;border:4px solid #5d3a1a;overflow:hidden">
+        <div style="width:100%;height:60%;background:linear-gradient(#87ceeb,#b3e5fc);border-radius:4px 4px 0 0 "></div>
+        <div style="position:absolute;top:15%;left:20%;width:30%;height:40%;background:#8bc34a;border-radius:2px"></div>
+        <div style="position:absolute;top:5%;left:10%;width:20%;height:40%;background:#f9a825;border-radius:50%"></div>
+      </div>
+      <div style="position:absolute;bottom:16%;right:8%;width:48px;height:34px;background:#3e2723;border-radius:3px;border:2px solid #6d4c41"></div>
+      <div class="clickable" onclick="decoClick(this,'sparkle')" style="position:absolute;bottom:24%;right:10%;cursor:pointer;transition:transform .2s">
+        <div style="width:34px;height:28px;background:#5d4037;border-radius:50% 50% 30% 30%;border:2px solid #8d6e63;display:flex;align-items:center;justify-content:center;font-size:16px">☕</div>
+      </div>
+      <div style="position:absolute;bottom:3%;right:25%;font-size:24px">🪴</div>
+      <div style="position:absolute;top:8%;right:10%;font-size:22px;animation:sway 4s infinite">🕯️</div>`,
+  },
+  {
+    id:6, name:'太空星球', emoji:'🚀',
+    cardBg: 'linear-gradient(160deg,#050010,#1a003a,#0a0025)',
+    stageBg: 'linear-gradient(175deg,#020008 0%,#08001a 40%,#10002a 70%,#08001a 100%)',
+    floor:   'linear-gradient(0deg,#1a0035,#120025)',
+    deco: `
+      <div style="position:absolute;top:4%;left:12%;width:55px;height:55px;background:radial-gradient(#ff6b35,#c0392b);border-radius:50%;box-shadow:0 0 20px rgba(255,100,50,0.5)"></div>
+      <div class="clickable" onclick="decoClick(this,'spin')" style="position:absolute;top:8%;right:15%;width:42px;height:42px;background:radial-gradient(#4fc3f7,#0288d1);border-radius:50%;box-shadow:0 0 16px rgba(79,195,247,0.6);cursor:pointer"></div>
+      <div style="position:absolute;top:20%;right:5%;font-size:26px;animation:float 3s infinite">🚀</div>
+      <div style="position:absolute;top:5%;left:5%;font-size:10px;color:white;animation:twinkle 1.5s infinite">✦</div>
+      <div style="position:absolute;top:10%;left:35%;font-size:10px;color:white;animation:twinkle 2s infinite 0.4s">✦</div>
+      <div style="position:absolute;top:3%;right:40%;font-size:12px;color:white;animation:twinkle 1.8s infinite 0.8s">✦</div>
+      <div style="position:absolute;top:18%;left:55%;font-size:8px;color:white;animation:twinkle 2.2s infinite 0.2s">✦</div>
+      <div style="position:absolute;top:28%;left:20%;font-size:10px;color:white;animation:twinkle 1.6s infinite 1.1s">✦</div>
+      <div style="position:absolute;top:12%;right:30%;font-size:8px;color:#ffd700;animation:twinkle 2.5s infinite 0.6s">⭐</div>
+      <div style="position:absolute;top:6%;left:52%;font-size:22px;animation:float 4s infinite 1s">🌙</div>`,
+  },
+  {
+    id:7, name:'水下世界', emoji:'🐠',
+    cardBg: 'linear-gradient(160deg,#001840,#004080,#006994)',
+    stageBg: 'linear-gradient(175deg,#001530 0%,#002244 40%,#003366 70%,#004488 100%)',
+    floor:   'linear-gradient(0deg,#002244,#003360)',
+    deco: `
+      <div style="position:absolute;bottom:0;left:5%;width:14%;height:28%;background:radial-gradient(#ff6b6b,#e53935);border-radius:10px 10px 6px 6px"></div>
+      <div style="position:absolute;bottom:0;left:22%;width:10%;height:20%;background:radial-gradient(#ffd700,#ff8800);border-radius:8px 8px 4px 4px"></div>
+      <div style="position:absolute;bottom:0;right:4%;width:12%;height:24%;background:radial-gradient(#ec407a,#ad1457);border-radius:8px 8px 4px 4px"></div>
+      <div style="position:absolute;bottom:0;right:20%;width:8%;height:35%;background:#4caf50;border-radius:50% 50% 0 0;animation:sway 3s ease-in-out infinite"></div>
+      <div style="position:absolute;bottom:0;right:28%;width:6%;height:28%;background:#66bb6a;border-radius:50% 50% 0 0;animation:sway 2.5s ease-in-out infinite 0.5s"></div>
+      <div class="clickable" onclick="decoClick(this,'sparkle')" style="position:absolute;top:30%;right:12%;font-size:28px;cursor:pointer;animation:swim 4s ease-in-out infinite">🐠</div>
+      <div style="position:absolute;top:45%;left:10%;font-size:22px;animation:swim 5s ease-in-out infinite 1s">🐡</div>
+      <div style="position:absolute;top:20%;left:30%;font-size:14px;color:rgba(255,255,255,0.5);animation:bubble-rise 3s ease-in infinite">●</div>
+      <div style="position:absolute;top:32%;left:50%;font-size:10px;color:rgba(255,255,255,0.4);animation:bubble-rise 4s ease-in infinite 1s">●</div>
+      <div style="position:absolute;top:40%;right:35%;font-size:12px;color:rgba(255,255,255,0.45);animation:bubble-rise 3.5s ease-in infinite 2s">●</div>`,
+  },
+];
+
+// ================================================================
+// 游戏状态
+// ================================================================
+const state = {
+  screen: 'title',
+  charId: 0,
+  outfit: { dress:-1, top:-1, bottom:-1, hat:-1, hairAcc:-1, bag:-1, shoes:-1 },
+  sceneId: 0,
+  activeTab: 'dress',
+  animTimer: null,
+  animIndex: 0,
+};
+
+// ================================================================
+// 存储工具
+// ================================================================
+const GAME_KEY = '小游戏_换装';
+const Store = {
+  get(f, d=0)  { const v=localStorage.getItem(`${GAME_KEY}_${f}`); if(v===null)return d; try{return JSON.parse(v);}catch{return d;} },
+  set(f, v)    { localStorage.setItem(`${GAME_KEY}_${f}`, JSON.stringify(v)); },
+};
+
+function saveOutfit() {
+  Store.set('上次造型', { charId: state.charId, outfit: { ...state.outfit }, sceneId: state.sceneId });
+}
+function loadOutfit() {
+  const saved = Store.get('上次造型', null);
+  if (!saved) return;
+  state.charId = saved.charId || 0;
+  state.sceneId = saved.sceneId || 0;
+  if (saved.outfit) Object.assign(state.outfit, saved.outfit);
+}
+
+// ================================================================
+// 音效
+// ================================================================
+const SFX = (() => {
+  let ctx = null;
+  function getCtx() { if (!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); return ctx; }
+  function isMuted() { try{ return JSON.parse(localStorage.getItem('小游戏_全局_静音')||'false'); }catch{ return false; } }
+  function tone(freq, dur, type='sine', vol=0.18, delay=0) {
+    if (isMuted()) return;
+    try {
+      const c=getCtx(), o=c.createOscillator(), g=c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type=type; o.frequency.setValueAtTime(freq, c.currentTime+delay);
+      g.gain.setValueAtTime(vol, c.currentTime+delay);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+delay+dur);
+      o.start(c.currentTime+delay); o.stop(c.currentTime+delay+dur);
+    } catch(e){}
+  }
+  function slide(f1, f2, dur, type='sine', vol=0.2) {
+    if (isMuted()) return;
+    try {
+      const c=getCtx(), o=c.createOscillator(), g=c.createGain();
+      o.connect(g); g.connect(c.destination);
+      o.type=type; o.frequency.setValueAtTime(f1, c.currentTime);
+      o.frequency.linearRampToValueAtTime(f2, c.currentTime+dur);
+      g.gain.setValueAtTime(vol, c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, c.currentTime+dur);
+      o.start(c.currentTime); o.stop(c.currentTime+dur);
+    } catch(e){}
+  }
+  return {
+    dressOn()   { slide(400, 1200, 0.25, 'sine', 0.18); },
+    dressOff()  { slide(900, 300, 0.2, 'sine', 0.15); },
+    accessory() { tone(880,0.08,'sine',0.15); setTimeout(()=>tone(1320,0.07,'sine',0.12),80); },
+    charSelect(){ [523,659,784].forEach((f,i)=>tone(f,0.12,'sine',0.18,i*0.08)); },
+    sceneEnter(){ [523,659,784,1047].forEach((f,i)=>tone(f,0.12,'sine',0.18,i*0.08)); },
+    sparkle()   { [1200,1400,1600,1800,1600].forEach((f,i)=>tone(f,0.06,'sine',0.13,i*0.05)); },
+    bounce()    { tone(880,0.09,'sine',0.16); tone(1100,0.07,'sine',0.12,0.1); },
+  };
+})();
+
+// ================================================================
+// 构建角色 SVG
+// ================================================================
+function buildCharSVG(charId, outfit, w=140) {
+  const char = CHARS[charId];
+  const skin = char.skin;
+  const h = Math.round(w * 300 / 160);
+  const layers = [];
+
+  // 翅膀（小星专属，最底层）
+  if (char.wings) layers.push(char.wings);
+
+  // 鞋子
+  if (outfit.shoes >= 0) {
+    layers.push(CLOTHING.shoes[outfit.shoes].svg);
+  } else {
+    layers.push(`<ellipse cx="61" cy="284" rx="12" ry="7" fill="${skin}"/>
+                 <ellipse cx="99" cy="284" rx="12" ry="7" fill="${skin}"/>`);
+  }
+
+  // 腿（皮肤）
+  layers.push(`<path d="M55,193 Q50,240 52,282 L70,282 Q72,240 73,193Z" fill="${skin}"/>
+               <path d="M87,193 Q88,240 90,282 L108,282 Q110,240 105,193Z" fill="${skin}"/>`);
+
+  // 下装
+  const hasFull = outfit.dress >= 0 || outfit.top >= 0 && false; // 只有当选了连衣裙才遮下装
+  const showBottom = (outfit.dress < 0) && (outfit.top >= 0 || true);
+  if (outfit.dress < 0 && outfit.bottom >= 0) {
+    layers.push(CLOTHING.bottom[outfit.bottom].svg);
+  }
+
+  // 躯干（皮肤）
+  layers.push(`<path d="M45,100 Q32,142 35,193 L125,193 Q128,142 115,100 Q100,93 80,91 Q60,93 45,100Z" fill="${skin}"/>`);
+
+  // 上装
+  if (outfit.dress < 0 && outfit.top >= 0) {
+    layers.push(CLOTHING.top[outfit.top].svg);
+  }
+
+  // 连衣裙（覆盖上下装）
+  if (outfit.dress >= 0) {
+    layers.push(CLOTHING.dress[outfit.dress].svg);
+  }
+
+  // 手臂（皮肤，覆盖在服装上方露出前臂）
+  layers.push(`<path d="M35,114 Q19,144 21,176 L32,179 Q38,156 44,130 L44,114Z" fill="${skin}"/>
+               <path d="M125,114 Q141,144 139,176 L128,179 Q122,156 116,130 L116,114Z" fill="${skin}"/>`);
+
+  // 包包
+  if (outfit.bag >= 0) {
+    layers.push(CLOTHING.bag[outfit.bag].svg);
+  }
+
+  // 脖子
+  layers.push(`<rect x="72" y="88" width="16" height="16" fill="${skin}"/>`);
+
+  // 头（皮肤）
+  layers.push(`<ellipse cx="80" cy="52" rx="36" ry="38" fill="${skin}"/>`);
+
+  // 头发后层
+  layers.push(char.hairBack);
+
+  // 眼睛 & 表情
+  const ec = char.eyeColor;
+  layers.push(`
+    <ellipse cx="65" cy="52" rx="10" ry="12" fill="white"/>
+    <ellipse cx="65" cy="54" rx="7" ry="8.5" fill="${ec}"/>
+    <circle cx="68.5" cy="50" r="2.5" fill="white"/>
+    <ellipse cx="95" cy="52" rx="10" ry="12" fill="white"/>
+    <ellipse cx="95" cy="54" rx="7" ry="8.5" fill="${ec}"/>
+    <circle cx="98.5" cy="50" r="2.5" fill="white"/>
+    <ellipse cx="54" cy="65" rx="8" ry="4" fill="rgba(255,150,150,0.38)"/>
+    <ellipse cx="106" cy="65" rx="8" ry="4" fill="rgba(255,150,150,0.38)"/>
+    <path d="M68,72 Q80,81 92,72" stroke="#cc3366" fill="none" stroke-width="2.5" stroke-linecap="round"/>
+  `);
+
+  // 头发前层（刘海）
+  layers.push(char.hairFront);
+
+  // 帽子
+  if (outfit.hat >= 0) {
+    layers.push(CLOTHING.hat[outfit.hat].svg);
+  } else if (outfit.hairAcc >= 0) {
+    // 发饰（无帽时才显示）
+    layers.push(CLOTHING.hairAcc[outfit.hairAcc].svg);
+  }
+
+  // 小星闪光装饰
+  if (charId === 2) {
+    layers.push(`<circle cx="108" cy="32" r="3" fill="#ffd700" opacity="0.8" style="animation:twinkle 1.5s infinite"/>
+                 <circle cx="55" cy="18" r="2" fill="#c39bd3" opacity="0.7" style="animation:twinkle 2s infinite 0.5s"/>`);
+  }
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 300" width="${w}" height="${h}" style="display:block">${layers.join('')}</svg>`;
+}
+
+// ================================================================
+// 屏幕导航
+// ================================================================
+function goTo(screen) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const id = { title:'s-title', chars:'s-chars', dress:'s-dress', scenes:'s-scenes', play:'s-play' }[screen];
+  document.getElementById(id).classList.add('active');
+  state.screen = screen;
+
+  if (screen === 'chars')  renderCharSelect();
+  if (screen === 'dress')  renderDressingRoom();
+  if (screen === 'scenes') renderSceneSelect();
+  if (screen === 'play')   renderScenePlay();
+}
+
+// ================================================================
+// 标题屏：迷你角色预览
+// ================================================================
+function renderTitlePreviews() {
+  const row = document.getElementById('titlePreviews');
+  row.innerHTML = CHARS.map((c, i) => `
+    <div class="char-preview-card" onclick="state.charId=${i};goTo('chars')">
+      ${buildCharSVG(i, state.outfit, 72)}
+      <span class="char-preview-name">${c.name}</span>
+    </div>
+  `).join('');
+}
+
+// ================================================================
+// 角色选择屏
+// ================================================================
+function renderCharSelect() {
+  const row = document.getElementById('charCardRow');
+  row.innerHTML = CHARS.map((c, i) => `
+    <div class="char-card ${state.charId===i?'selected':''}" onclick="pickChar(${i})">
+      ${buildCharSVG(i, state.outfit, 110)}
+      <div class="char-card-name">${c.name}</div>
+      <div class="char-card-tag">${c.tag}</div>
+      <div class="char-card-desc">${c.desc}</div>
+      <button class="btn btn-primary" style="margin-top:8px;font-size:13px;padding:10px 24px" onclick="event.stopPropagation();pickChar(${i});goTo('dress')">为我换装 ✨</button>
+    </div>
+  `).join('');
+}
+
+function pickChar(id) {
+  state.charId = id;
+  SFX.charSelect();
+  renderCharSelect();
+  saveOutfit();
+}
+
+// ================================================================
+// 换装室
+// ================================================================
+function renderDressingRoom() {
+  renderCatTabs();
+  renderItemGrid();
+  renderCharStage();
+  renderOutfitSummary();
+}
+
+function renderCatTabs() {
+  document.getElementById('catTabs').innerHTML = CATS.map(c => `
+    <div class="cat-tab ${state.activeTab===c.key?'active':''}" onclick="switchTab('${c.key}')">
+      ${c.emoji} ${c.label}
+    </div>
+  `).join('');
+}
+
+function switchTab(key) {
+  state.activeTab = key;
+  renderCatTabs();
+  renderItemGrid();
+}
+
+function renderItemGrid() {
+  const items = CLOTHING[state.activeTab] || [];
+  const outfit = state.outfit;
+  const curSel = outfit[state.activeTab] !== undefined ? outfit[state.activeTab] : -1;
+
+  document.getElementById('itemGrid').innerHTML = items.map((item, i) => `
+    <div class="item-card ${curSel===i?'selected':''}" onclick="selectClothing('${state.activeTab}',${i})">
+      <div class="item-color" style="background:${item.color}20;border:2px solid ${item.color}60">
+        <span>${item.emoji}</span>
+      </div>
+      <span class="item-name">${item.name}</span>
+    </div>
+  `).join('');
+}
+
+function selectClothing(cat, idx) {
+  const o = state.outfit;
+  if (cat === 'dress') {
+    o.dress === idx ? (o.dress=-1) : (o.dress=idx, o.top=-1, o.bottom=-1);
+    SFX.dressOn();
+  } else if (cat === 'top') {
+    o.top === idx ? (o.top=-1, SFX.dressOff()) : (o.top=idx, o.dress=-1, SFX.dressOn());
+  } else if (cat === 'bottom') {
+    o.bottom === idx ? (o.bottom=-1, SFX.dressOff()) : (o.bottom=idx, o.dress=-1, SFX.dressOn());
+  } else if (cat === 'hat') {
+    o.hat === idx ? (o.hat=-1, SFX.dressOff()) : (o.hat=idx, o.hairAcc=-1, SFX.accessory());
+  } else if (cat === 'hairAcc') {
+    o.hairAcc === idx ? (o.hairAcc=-1, SFX.dressOff()) : (o.hairAcc=idx, o.hat=-1, SFX.accessory());
+  } else {
+    // shoes, bag
+    o[cat] === idx ? (o[cat]=-1, SFX.dressOff()) : (o[cat]=idx, SFX.accessory());
+  }
+  renderCharStage();
+  renderItemGrid();
+  renderOutfitSummary();
+  saveOutfit();
+}
+
+function renderCharStage() {
+  document.getElementById('dressingStage').innerHTML = buildCharSVG(state.charId, state.outfit, 136);
+}
+
+function renderOutfitSummary() {
+  const o = state.outfit;
+  const tags = [];
+  const catName = { dress:'裙', top:'上装', bottom:'下装', hat:'帽', hairAcc:'发饰', bag:'包', shoes:'鞋' };
+  Object.keys(catName).forEach(k => {
+    const idx = o[k];
+    if (idx >= 0 && CLOTHING[k] && CLOTHING[k][idx]) {
+      tags.push(`<span class="outfit-tag">${CLOTHING[k][idx].name}</span>`);
+    }
+  });
+  document.getElementById('outfitSummary').innerHTML = tags.length ? tags.join('') : '<span style="color:var(--text-dim);font-size:12px">还没穿任何衣服哦～</span>';
+}
+
+function clearOutfit() {
+  state.outfit = { dress:-1, top:-1, bottom:-1, hat:-1, hairAcc:-1, bag:-1, shoes:-1 };
+  SFX.dressOff();
+  renderDressingRoom();
+  saveOutfit();
+}
+
+// ================================================================
+// 场景选择
+// ================================================================
+function renderSceneSelect() {
+  document.getElementById('sceneCardGrid').innerHTML = SCENES.map(s => `
+    <div class="scene-card" onclick="pickScene(${s.id})">
+      <div class="scene-card-bg" style="background:${s.cardBg}">
+        <div class="scene-card-emoji">${s.emoji}</div>
+        <div class="scene-card-name">${s.name}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function pickScene(id) {
+  state.sceneId = id;
+  Store.set('总局数', Store.get('总局数', 0) + 1);
+  SFX.sceneEnter();
+  saveOutfit();
+  goTo('play');
+}
+
+// ================================================================
+// 场景互动
+// ================================================================
+function renderScenePlay() {
+  const scene = SCENES[state.sceneId];
+  const stage = document.getElementById('sceneStage');
+
+  // 设置背景
+  stage.style.background = scene.stageBg;
+
+  // 地面
+  const floorEl = stage.querySelector('.scene-floor') || (() => {
+    const d = document.createElement('div');
+    d.className = 'scene-floor';
+    d.style.cssText = `position:absolute;bottom:0;left:0;right:0;height:18%;z-index:1`;
+    stage.insertBefore(d, stage.firstChild);
+    return d;
+  })();
+  floorEl.style.background = scene.floor;
+
+  // 装饰
+  document.getElementById('sceneDeco').innerHTML = scene.deco;
+
+  // 角色
+  const charEl = document.getElementById('scene-char');
+  charEl.innerHTML = buildCharSVG(state.charId, state.outfit, 118);
+  charEl.className = '';  // 清除动画类
+  charEl.style.zIndex = '10';
+}
+
+// ================================================================
+// 角色动作
+// ================================================================
+const ANIMS = ['wave', 'jump', 'spin'];
+
+function onCharClick() {
+  const type = ANIMS[state.animIndex % 3];
+  state.animIndex++;
+  triggerAnim(type);
+}
+
+function triggerAnim(type) {
+  SFX.bounce();
+  const el = document.getElementById('scene-char');
+  el.classList.remove('anim-wave', 'anim-jump', 'anim-spin');
+  void el.offsetWidth; // reflow
+  el.classList.add(`anim-${type}`);
+  clearTimeout(state.animTimer);
+  state.animTimer = setTimeout(() => {
+    if (el) el.classList.remove('anim-wave', 'anim-jump', 'anim-spin');
+  }, 1200);
+}
+
+function decoClick(el, effect) {
+  SFX.sparkle();
+  el.style.transform = 'scale(1.25)';
+  el.style.filter = 'brightness(1.4) drop-shadow(0 0 12px rgba(255,220,0,0.8))';
+  setTimeout(() => {
+    el.style.transform = '';
+    el.style.filter = '';
+  }, 600);
+}
+
+// ================================================================
+// 静音
+// ================================================================
+const btnMute = document.getElementById('btnMute');
+let muted; try{ muted = JSON.parse(localStorage.getItem('小游戏_全局_静音') || 'false'); }catch{ muted = false; }
+btnMute.textContent = muted ? '🔇' : '🔊';
+btnMute.addEventListener('click', () => {
+  muted = !muted;
+  localStorage.setItem('小游戏_全局_静音', JSON.stringify(muted));
+  btnMute.textContent = muted ? '🔇' : '🔊';
+});
+
+// ================================================================
+// 初始化
+// ================================================================
+loadOutfit();
+renderTitlePreviews();
+</script>
+</body>
+</html>

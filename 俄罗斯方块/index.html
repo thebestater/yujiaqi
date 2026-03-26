@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>俄罗斯方块 — 小游戏合集</title>
+<style>
+  :root {
+    --bg-primary:     #1a1a2e;
+    --bg-secondary:   #16213e;
+    --bg-tertiary:    #0f3460;
+    --bg-panel:       rgba(255,255,255,0.05);
+    --bg-panel-hover: rgba(255,255,255,0.08);
+    --accent:         #e94560;
+    --accent-dim:     #c73652;
+    --text-primary:   #ffffff;
+    --text-secondary: #aaaaaa;
+    --text-muted:     #666666;
+    --border-subtle:  rgba(255,255,255,0.10);
+    --glow-accent:    0 0 20px rgba(233,69,96,0.35);
+    --glow-strong:    0 0 40px rgba(233,69,96,0.50);
+    --glow-title:     0 0 30px rgba(233,69,96,0.60);
+    --font-ui:        'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+    --font-mono:      'Consolas', 'Courier New', monospace;
+    --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+    --transition-fast: 0.15s ease;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-ui);
+    color: var(--text-primary);
+    user-select: none;
+  }
+
+  /* 返回大厅 */
+  .back-link {
+    position: fixed; top: 16px; left: 16px;
+    color: var(--text-secondary); text-decoration: none; font-size: 0.85rem;
+    padding: 6px 12px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border-subtle); background: var(--bg-panel);
+    transition: all var(--transition-fast); z-index: 100;
+  }
+  .back-link:hover { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-accent); }
+
+  /* 游戏布局 */
+  .game-wrapper {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    padding: 20px;
+  }
+
+  /* 面板通用 */
+  .panel-box {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+  }
+  .panel-box h3 {
+    font-size: 0.68rem; font-weight: 600; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px;
+  }
+  .panel-box .value {
+    font-size: 1.8rem; font-weight: 700;
+    color: var(--accent); font-family: var(--font-mono);
+  }
+
+  /* 左面板 */
+  .left-panel { display: flex; flex-direction: column; gap: 12px; width: 130px; }
+
+  /* 主画布 */
+  #game-canvas {
+    border: 2px solid var(--accent); border-radius: var(--radius-md);
+    display: block; box-shadow: var(--glow-accent);
+  }
+
+  /* 右面板 */
+  .right-panel { display: flex; flex-direction: column; gap: 10px; width: 130px; }
+
+  /* 下一个预览 */
+  #next-canvas { display: block; margin: 0 auto; }
+
+  /* 按钮 */
+  .btn {
+    width: 100%; padding: 10px;
+    border: none; border-radius: var(--radius-md); cursor: pointer;
+    font-size: 0.9rem; font-weight: 700; font-family: var(--font-ui);
+    transition: all var(--transition-fast); min-height: 42px;
+  }
+  .btn-primary   { background: var(--accent); color: #fff; }
+  .btn-primary:hover  { background: var(--accent-dim); box-shadow: var(--glow-accent); }
+  .btn-secondary { background: var(--bg-panel); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+  .btn-secondary:hover{ border-color: var(--accent); color: var(--accent); }
+  .btn:active { transform: scale(0.97); }
+
+  /* 按键说明 */
+  .key-guide {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: 12px 14px;
+    font-size: 0.72rem; color: var(--text-muted); line-height: 2.1;
+  }
+  .key-guide span { color: var(--accent); font-weight: 600; }
+
+  /* 游戏结束遮罩 */
+  #game-over {
+    display: none; position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.78);
+    justify-content: center; align-items: center;
+    flex-direction: column; gap: 18px; z-index: 10;
+  }
+  #game-over h2 { font-size: 2.6rem; color: var(--accent); text-shadow: var(--glow-strong); }
+  #game-over p  { font-size: 1.1rem; color: var(--text-secondary); }
+  #game-over .final-score { font-size: 1.8rem; color: #fff; font-family: var(--font-mono); }
+  #game-over button {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: var(--radius-md); padding: 12px 36px;
+    font-size: 1rem; font-weight: 700; cursor: pointer;
+    transition: opacity var(--transition-fast);
+  }
+  #game-over button:hover { opacity: 0.85; }
+
+  /* 破纪录横幅 */
+  .record-banner {
+    position: fixed; top: 70px; left: 50%;
+    transform: translateX(-50%) translateY(-20px);
+    background: var(--accent); color: #fff;
+    padding: 10px 24px; border-radius: 25px;
+    font-weight: 700; font-size: 1.1rem;
+    box-shadow: var(--glow-strong);
+    transition: all 0.4s ease; z-index: 999;
+    opacity: 0; pointer-events: none;
+  }
+  .record-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<a class="back-link" href="../index.html">← 游戏大厅</a>
+
+<div class="game-wrapper">
+  <!-- 左面板 -->
+  <div class="left-panel">
+    <div class="panel-box">
+      <h3>分数</h3>
+      <div class="value" id="score">0</div>
+    </div>
+    <div class="panel-box">
+      <h3>最高分</h3>
+      <div class="value" id="best">0</div>
+    </div>
+    <div class="panel-box">
+      <h3>等级</h3>
+      <div class="value" id="level">1</div>
+    </div>
+    <div class="panel-box">
+      <h3>消行</h3>
+      <div class="value" id="lines">0</div>
+    </div>
+    <div class="panel-box">
+      <h3>已玩</h3>
+      <div class="value" id="playCount" style="font-size:1.4rem;">0</div>
+    </div>
+  </div>
+
+  <!-- 主画布 -->
+  <canvas id="game-canvas" width="300" height="600"></canvas>
+
+  <!-- 右面板 -->
+  <div class="right-panel">
+    <div class="panel-box">
+      <h3>下一个</h3>
+      <canvas id="next-canvas" width="100" height="100"></canvas>
+    </div>
+    <button class="btn btn-primary" id="btn-start">▶ 开始游戏</button>
+    <button class="btn btn-secondary" id="btn-mute">🔊 音效</button>
+    <div class="key-guide">
+      <div><span>←→</span> 移动</div>
+      <div><span>↑</span> 旋转</div>
+      <div><span>↓</span> 加速</div>
+      <div><span>空格</span> 直落</div>
+      <div><span>P</span> 暂停</div>
+      <div><span>M</span> 静音</div>
+    </div>
+  </div>
+</div>
+
+<!-- 游戏结束遮罩 -->
+<div id="game-over">
+  <h2>GAME OVER</h2>
+  <p>最终得分</p>
+  <div class="final-score" id="final-score">0</div>
+  <button onclick="restartGame()">🔄 再来一局</button>
+</div>
+
+<script>
+// ============================================================
+// 存储
+// ============================================================
+const GAME_KEY = '小游戏_俄罗斯方块';
+const Store = {
+  get(f,d=0)   { const v=localStorage.getItem(`${GAME_KEY}_${f}`); return v!==null?JSON.parse(v):d; },
+  set(f,v)     { localStorage.setItem(`${GAME_KEY}_${f}`,JSON.stringify(v)); },
+  tryBest(f,v) { const c=this.get(f,0); if(v>c){this.set(f,v);return true;} return false; },
+};
+
+// ============================================================
+// 音效
+// ============================================================
+const SFX = (() => {
+  let actx=null;
+  let muted=JSON.parse(localStorage.getItem('小游戏_全局_静音')||'false');
+  function gc() {
+    if(!actx) actx=new(window.AudioContext||window.webkitAudioContext)();
+    if(actx.state==='suspended') actx.resume();
+    return actx;
+  }
+  function beep(freq,dur,type='square',vol=0.2) {
+    if(muted) return;
+    try {
+      const c=gc(),osc=c.createOscillator(),g=c.createGain();
+      osc.connect(g);g.connect(c.destination);
+      osc.type=type;osc.frequency.setValueAtTime(freq,c.currentTime);
+      g.gain.setValueAtTime(vol,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+      osc.start(c.currentTime);osc.stop(c.currentTime+dur);
+    }catch(e){}
+  }
+  return {
+    isMuted(){ return muted; },
+    toggle() {
+      muted=!muted;
+      localStorage.setItem('小游戏_全局_静音',JSON.stringify(muted));
+      return muted;
+    },
+    clear(n=1) {
+      const fqs=n>=4?[330,440,550,660]:[440,550];
+      fqs.forEach((f,i)=>setTimeout(()=>beep(f,0.12,'sine',0.22),i*60));
+    },
+    land()    { beep(120,0.05,'square',0.12); },
+    gameOver(){ beep(180,0.6,'sawtooth',0.3); },
+    record()  { [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,0.12,'sine',0.22),i*80)); },
+  };
+})();
+
+// ============================================================
+// 游戏常量
+// ============================================================
+const COLS=10, ROWS=20, BLOCK=30;
+const canvas  = document.getElementById('game-canvas');
+const ctx     = canvas.getContext('2d');
+const nextCvs = document.getElementById('next-canvas');
+const nCtx    = nextCvs.getContext('2d');
+
+const SHAPES=[null,[[1,1,1,1]],[[2,2],[2,2]],[[0,3,0],[3,3,3]],[[4,0],[4,0],[4,4]],[[0,5],[0,5],[5,5]],[[0,6,6],[6,6,0]],[[7,7,0],[0,7,7]]];
+const COLORS=[null,'#00f0f0','#f0f000','#a000f0','#f0a000','#0000f0','#00f000','#f00000'];
+
+// ============================================================
+// 游戏状态
+// ============================================================
+let board,score,level,lines,best,playCount,gameRunning,paused,dropInterval,lastTime,dropCounter,currentPiece,nextPiece,animId;
+
+// 初始化显示
+best      = Store.get('最高分',0);
+playCount = Store.get('总局数',0);
+document.getElementById('best').textContent      = best;
+document.getElementById('playCount').textContent  = playCount;
+document.getElementById('btn-mute').textContent   = SFX.isMuted()?'🔇 静音':'🔊 音效';
+
+// 初始画面
+ctx.fillStyle='#0d0d1a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+ctx.fillStyle='rgba(233,69,96,0.2)'; ctx.font='bold 18px "Segoe UI","Microsoft YaHei",Arial';
+ctx.textAlign='center';
+ctx.fillText('🧱 俄罗斯方块',canvas.width/2,canvas.height/2-20);
+ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.font='14px "Segoe UI",Arial';
+ctx.fillText('按「▶ 开始游戏」',canvas.width/2,canvas.height/2+14);
+
+// ============================================================
+// 工具函数
+// ============================================================
+function createBoard() { return Array.from({length:ROWS},()=>Array(COLS).fill(0)); }
+
+function createPiece(type) {
+  return {type, shape:SHAPES[type].map(r=>[...r]),
+          x:Math.floor(COLS/2)-Math.floor(SHAPES[type][0].length/2), y:0};
+}
+
+function randomPiece() { return createPiece(Math.floor(Math.random()*7)+1); }
+
+function drawBlock(c,x,y,color,size=BLOCK) {
+  c.fillStyle=color;
+  c.fillRect(x*size+1,y*size+1,size-2,size-2);
+  c.fillStyle='rgba(255,255,255,0.22)';
+  c.fillRect(x*size+2,y*size+2,size-4,4);
+  c.fillRect(x*size+2,y*size+2,4,size-4);
+}
+
+function drawBoard() {
+  ctx.fillStyle='#0d0d1a'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle='rgba(255,255,255,0.04)'; ctx.lineWidth=1;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) ctx.strokeRect(c*BLOCK,r*BLOCK,BLOCK,BLOCK);
+  board.forEach((row,r)=>row.forEach((val,c)=>{ if(val) drawBlock(ctx,c,r,COLORS[val]); }));
+}
+
+function drawPiece(piece) {
+  piece.shape.forEach((row,r)=>row.forEach((val,c)=>{ if(val) drawBlock(ctx,piece.x+c,piece.y+r,COLORS[val]); }));
+}
+
+function drawGhost() {
+  let g={shape:currentPiece.shape,x:currentPiece.x,y:currentPiece.y};
+  while(!collide(g,0,1)) g.y++;
+  g.shape.forEach((row,r)=>row.forEach((val,c)=>{
+    if(val){
+      ctx.strokeStyle=COLORS[val]; ctx.lineWidth=1.5;
+      ctx.strokeRect((g.x+c)*BLOCK+2,(g.y+r)*BLOCK+2,BLOCK-4,BLOCK-4);
+    }
+  }));
+}
+
+function drawNext() {
+  nCtx.fillStyle='rgba(255,255,255,0.04)'; nCtx.fillRect(0,0,100,100);
+  const s=20, shape=nextPiece.shape;
+  const offX=Math.floor((5-shape[0].length)/2);
+  const offY=Math.floor((5-shape.length)/2);
+  shape.forEach((row,r)=>row.forEach((val,c)=>{
+    if(val){
+      nCtx.fillStyle=COLORS[val];
+      nCtx.fillRect((offX+c)*s+1,(offY+r)*s+1,s-2,s-2);
+      nCtx.fillStyle='rgba(255,255,255,0.22)';
+      nCtx.fillRect((offX+c)*s+2,(offY+r)*s+2,s-4,4);
+    }
+  }));
+}
+
+function collide(piece,dx=0,dy=0,shape=null) {
+  const s=shape||piece.shape;
+  for(let r=0;r<s.length;r++) for(let c=0;c<s[r].length;c++){
+    if(!s[r][c]) continue;
+    const nx=piece.x+c+dx, ny=piece.y+r+dy;
+    if(nx<0||nx>=COLS||ny>=ROWS) return true;
+    if(ny>=0&&board[ny][nx]) return true;
+  }
+  return false;
+}
+
+function rotate(shape) {
+  const rows=shape.length, cols=shape[0].length;
+  const res=Array.from({length:cols},()=>Array(rows).fill(0));
+  for(let r=0;r<rows;r++) for(let c=0;c<cols;c++) res[c][rows-1-r]=shape[r][c];
+  return res;
+}
+
+function rotatePiece() {
+  const ns=rotate(currentPiece.shape);
+  for(const k of [0,1,-1,2,-2]) {
+    if(!collide({...currentPiece,shape:ns},k,0,ns)){
+      currentPiece.shape=ns; currentPiece.x+=k; return;
+    }
+  }
+}
+
+function merge() {
+  currentPiece.shape.forEach((row,r)=>row.forEach((val,c)=>{
+    if(val) board[currentPiece.y+r][currentPiece.x+c]=val;
+  }));
+}
+
+function clearLines() {
+  let cleared=0;
+  for(let r=ROWS-1;r>=0;r--){
+    if(board[r].every(v=>v!==0)){
+      board.splice(r,1); board.unshift(Array(COLS).fill(0));
+      cleared++; r++;
+    }
+  }
+  if(cleared>0){
+    const pts=[0,100,300,500,800];
+    score+=(pts[cleared]||800)*level;
+    lines+=cleared;
+    level=Math.floor(lines/10)+1;
+    dropInterval=Math.max(100,1000-(level-1)*80);
+    SFX.clear(cleared);
+    updateUI();
+  }
+}
+
+function updateUI() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('level').textContent = level;
+  document.getElementById('lines').textContent = lines;
+}
+
+function spawnPiece() {
+  currentPiece=nextPiece;
+  nextPiece=randomPiece();
+  drawNext();
+  if(collide(currentPiece)) { gameOver(); }
+}
+
+function gameOver() {
+  gameRunning=false;
+  cancelAnimationFrame(animId);
+
+  // 局数
+  playCount++;
+  Store.set('总局数',playCount);
+  document.getElementById('playCount').textContent=playCount;
+
+  // 最高分
+  if(Store.tryBest('最高分',score)){
+    best=score;
+    document.getElementById('best').textContent=best;
+    showRecordBanner();
+    SFX.record();
+  } else {
+    SFX.gameOver();
+  }
+
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('game-over').style.display='flex';
+}
+
+function restartGame() {
+  document.getElementById('game-over').style.display='none';
+  startGame();
+}
+
+function startGame() {
+  board=createBoard();
+  score=0; level=1; lines=0;
+  dropInterval=1000; dropCounter=0; lastTime=0;
+  updateUI();
+  best=Store.get('最高分',0);
+  document.getElementById('best').textContent=best;
+  nextPiece=randomPiece();
+  spawnPiece();
+  gameRunning=true; paused=false;
+  document.getElementById('btn-start').textContent='🔄 重新开始';
+  cancelAnimationFrame(animId);
+  loop(0);
+}
+
+function loop(time) {
+  if(!gameRunning) return;
+  const delta=time-lastTime; lastTime=time;
+  if(!paused){
+    dropCounter+=delta;
+    if(dropCounter>=dropInterval){
+      dropCounter=0;
+      if(!collide(currentPiece,0,1)){ currentPiece.y++; }
+      else { merge(); clearLines(); spawnPiece(); SFX.land(); }
+    }
+    drawBoard(); drawGhost(); drawPiece(currentPiece);
+  }
+  if(paused){
+    ctx.fillStyle='rgba(0,0,0,0.55)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='#fff'; ctx.font='bold 26px "Segoe UI","Microsoft YaHei",Arial'; ctx.textAlign='center';
+    ctx.fillText('⏸ 暂停中',canvas.width/2,canvas.height/2-14);
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.font='13px "Segoe UI",Arial';
+    ctx.fillText('按 P 继续',canvas.width/2,canvas.height/2+18);
+  }
+  animId=requestAnimationFrame(loop);
+}
+
+function showRecordBanner() {
+  const el=document.createElement('div');
+  el.className='record-banner'; el.textContent='🏆 新纪录！';
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),400);},2500);
+}
+
+// ============================================================
+// 键盘输入
+// ============================================================
+document.addEventListener('keydown',e=>{
+  if(e.key===' ') e.preventDefault();
+  if(!gameRunning) return;
+  switch(e.key){
+    case'ArrowLeft':  if(!collide(currentPiece,-1,0)) currentPiece.x--; break;
+    case'ArrowRight': if(!collide(currentPiece,1,0))  currentPiece.x++; break;
+    case'ArrowDown':
+      if(!collide(currentPiece,0,1)){currentPiece.y++;score+=1;updateUI();}
+      break;
+    case'ArrowUp': rotatePiece(); break;
+    case' ':
+      while(!collide(currentPiece,0,1)){currentPiece.y++;score+=2;}
+      updateUI(); merge(); clearLines(); spawnPiece(); SFX.land();
+      break;
+    case'p':case'P':
+      paused=!paused;
+      if(!paused) lastTime=performance.now();
+      break;
+    case'm':case'M':
+      SFX.toggle();
+      document.getElementById('btn-mute').textContent=SFX.isMuted()?'🔇 静音':'🔊 音效';
+      break;
+  }
+});
+
+// 按钮
+document.getElementById('btn-start').addEventListener('click',startGame);
+document.getElementById('btn-mute').addEventListener('click',()=>{
+  SFX.toggle();
+  document.getElementById('btn-mute').textContent=SFX.isMuted()?'🔇 静音':'🔊 音效';
+});
+</script>
+</body>
+</html>

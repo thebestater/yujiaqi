@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>贪吃蛇 — 小游戏合集</title>
+  <style>
+    :root {
+      --bg-primary:     #1a1a2e;
+      --bg-secondary:   #16213e;
+      --bg-tertiary:    #0f3460;
+      --bg-panel:       rgba(255,255,255,0.05);
+      --bg-panel-hover: rgba(255,255,255,0.08);
+      --accent:         #00ff88;
+      --accent-dim:     #00cc6a;
+      --text-primary:   #ffffff;
+      --text-secondary: #aaaaaa;
+      --text-muted:     #666666;
+      --border-subtle:  rgba(255,255,255,0.10);
+      --glow-accent:    0 0 20px rgba(0,255,136,0.35);
+      --glow-title:     0 0 30px rgba(0,255,136,0.60);
+      --font-ui:        'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+      --font-mono:      'Consolas', 'Courier New', monospace;
+      --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+      --transition-fast: 0.15s ease;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 50%, var(--bg-tertiary) 100%);
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-family: var(--font-ui);
+      color: var(--text-primary);
+      user-select: none;
+    }
+
+    /* 返回大厅 */
+    .back-link {
+      position: fixed; top: 16px; left: 16px;
+      color: var(--text-secondary); text-decoration: none; font-size: 0.85rem;
+      padding: 6px 12px; border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle); background: var(--bg-panel);
+      transition: all var(--transition-fast); z-index: 100;
+    }
+    .back-link:hover { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-accent); }
+
+    /* 标题 */
+    .game-title {
+      color: var(--accent); font-size: 2.5rem; margin-bottom: 6px;
+      text-shadow: var(--glow-title); letter-spacing: 3px;
+    }
+    .game-subtitle { color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 20px; }
+
+    /* 信息栏 */
+    .info-bar {
+      display: flex; gap: 32px; padding: 10px 30px; margin-bottom: 16px;
+      background: var(--bg-panel); border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg); font-size: 1.05rem; flex-wrap: wrap; justify-content: center;
+    }
+    .info-item { display: flex; align-items: center; gap: 7px; }
+    .info-value { color: var(--accent); font-weight: 700; font-family: var(--font-mono); min-width: 3ch; text-align: right; }
+
+    /* 控制栏 */
+    .control-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; justify-content: center; }
+    .btn {
+      padding: 9px 22px; border: none; border-radius: var(--radius-md); cursor: pointer;
+      font-size: 0.92rem; font-weight: 600; font-family: var(--font-ui);
+      transition: all var(--transition-fast); min-width: 88px; min-height: 44px;
+    }
+    .btn-primary { background: var(--accent); color: #1a1a2e; }
+    .btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); box-shadow: var(--glow-accent); }
+    .btn-secondary { background: var(--bg-panel); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); background: var(--bg-panel-hover); }
+    .btn:active { transform: scale(0.97); }
+
+    /* 画布 */
+    #gameCanvas {
+      border: 2px solid var(--accent); border-radius: var(--radius-lg);
+      box-shadow: var(--glow-accent); background: #0a0a15;
+      touch-action: none; display: block;
+    }
+
+    /* 消息区 */
+    .game-message {
+      min-height: 2.2rem; font-size: 1.3rem; font-weight: bold;
+      text-align: center; margin-top: 14px;
+      text-shadow: 0 0 10px currentColor;
+    }
+    .game-message.win  { color: #81c784; }
+    .game-message.lose { color: #e94560; }
+    .game-message.info { color: var(--accent); }
+
+    /* 触屏方向键 */
+    .touch-controls {
+      display: none;
+      grid-template-areas: ". up ." "left . right" ". down .";
+      grid-template-columns: repeat(3, 58px);
+      grid-template-rows: repeat(3, 58px);
+      gap: 6px; margin-top: 16px;
+    }
+    @media (pointer: coarse) { .touch-controls { display: grid; } }
+    .touch-btn {
+      width: 58px; height: 58px; border-radius: var(--radius-md);
+      background: var(--bg-panel); border: 1px solid var(--border-subtle);
+      color: var(--text-primary); font-size: 1.5rem;
+      display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .touch-btn:active { background: var(--bg-panel-hover); border-color: var(--accent); }
+    .touch-btn.up    { grid-area: up; }
+    .touch-btn.left  { grid-area: left; }
+    .touch-btn.right { grid-area: right; }
+    .touch-btn.down  { grid-area: down; }
+
+    /* 帮助 */
+    .help-section {
+      margin-top: 18px; color: var(--text-muted); font-size: 0.8rem; text-align: center;
+    }
+    .help-section summary { cursor: pointer; color: var(--text-secondary); margin-bottom: 6px; }
+    .help-section div { line-height: 2.0; }
+
+    /* 破纪录横幅 */
+    .record-banner {
+      position: fixed; top: 70px; left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--accent); color: #1a1a2e;
+      padding: 10px 24px; border-radius: 25px;
+      font-weight: 700; font-size: 1.1rem;
+      box-shadow: 0 0 40px rgba(0,255,136,0.5);
+      transition: all 0.4s ease; z-index: 999;
+      opacity: 0; pointer-events: none;
+    }
+    .record-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <a class="back-link" href="../index.html">← 游戏大厅</a>
+
+  <h1 class="game-title">🐍 贪吃蛇</h1>
+  <p class="game-subtitle">方向键 / WASD 移动 · 空格 / P 暂停</p>
+
+  <div class="info-bar">
+    <div class="info-item">🏆 最高分 <span class="info-value" id="highScore">0</span></div>
+    <div class="info-item">⭐ 当前分 <span class="info-value" id="score">0</span></div>
+    <div class="info-item">🎮 局数 <span class="info-value" id="playCount">0</span></div>
+  </div>
+
+  <div class="control-bar">
+    <button class="btn btn-primary"   id="startBtn">🔄 新游戏</button>
+    <button class="btn btn-secondary" id="pauseBtn">⏸ 暂停</button>
+    <button class="btn btn-secondary" id="muteBtn">🔊</button>
+  </div>
+
+  <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+  <div class="touch-controls">
+    <button class="touch-btn up"    id="upBtn">⬆</button>
+    <button class="touch-btn left"  id="leftBtn">⬅</button>
+    <button class="touch-btn right" id="rightBtn">➡</button>
+    <button class="touch-btn down"  id="downBtn">⬇</button>
+  </div>
+
+  <div class="game-message" id="gameMessage" aria-live="polite"></div>
+
+  <details class="help-section">
+    <summary>📖 操作说明</summary>
+    <div>
+      ⬆⬇⬅➡ / W A S D — 控制方向<br>
+      空格 / P — 暂停 / 继续<br>
+      Enter — 开始游戏<br>
+      M — 静音切换
+    </div>
+  </details>
+
+<script>
+// ============================================================
+// 存储
+// ============================================================
+const GAME_KEY = '小游戏_贪吃蛇';
+const Store = {
+  get(f, d=0)    { const v=localStorage.getItem(`${GAME_KEY}_${f}`); return v!==null?JSON.parse(v):d; },
+  set(f, v)      { localStorage.setItem(`${GAME_KEY}_${f}`, JSON.stringify(v)); },
+  tryBest(f, v)  { const c=this.get(f,0); if(v>c){this.set(f,v);return true;} return false; },
+};
+
+// ============================================================
+// 音效（Web Audio API）
+// ============================================================
+const SFX = (() => {
+  let actx = null;
+  let muted = JSON.parse(localStorage.getItem('小游戏_全局_静音') || 'false');
+  function ctx() {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function beep(freq, dur, type='square', vol=0.2) {
+    if (muted) return;
+    try {
+      const c=ctx(), osc=c.createOscillator(), g=c.createGain();
+      osc.connect(g); g.connect(c.destination);
+      osc.type=type; osc.frequency.setValueAtTime(freq,c.currentTime);
+      g.gain.setValueAtTime(vol,c.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001,c.currentTime+dur);
+      osc.start(c.currentTime); osc.stop(c.currentTime+dur);
+    } catch(e){}
+  }
+  return {
+    isMuted(){ return muted; },
+    toggle() {
+      muted=!muted;
+      localStorage.setItem('小游戏_全局_静音',JSON.stringify(muted));
+      return muted;
+    },
+    eat()     { beep(660,0.07,'square',0.18); },
+    gameOver(){ beep(180,0.55,'sawtooth',0.28); },
+    record()  { [523,659,784,1047,1319].forEach((f,i)=>setTimeout(()=>beep(f,0.12,'sine',0.22),i*80)); },
+  };
+})();
+
+// ============================================================
+// DOM 引用
+// ============================================================
+const canvas     = document.getElementById('gameCanvas');
+const ctx2d      = canvas.getContext('2d');
+const elScore    = document.getElementById('score');
+const elHigh     = document.getElementById('highScore');
+const elCount    = document.getElementById('playCount');
+const elMessage  = document.getElementById('gameMessage');
+const startBtn   = document.getElementById('startBtn');
+const pauseBtn   = document.getElementById('pauseBtn');
+const muteBtn    = document.getElementById('muteBtn');
+
+// ============================================================
+// 游戏常量
+// ============================================================
+const GRID = 20;
+const COLS = canvas.width / GRID;   // 20
+const ROWS = canvas.height / GRID;  // 20
+
+// ============================================================
+// 游戏状态
+// ============================================================
+let snake      = [];
+let food       = {};
+let direction  = 'right';
+let nextDir    = 'right';
+let score      = 0;
+let highScore  = Store.get('最高分', 0);
+let playCount  = Store.get('总局数', 0);
+let gameLoop   = null;
+let gameSpeed  = 150;
+let isPlaying  = false;
+let isPaused   = false;
+let gameDead   = false;
+
+// 初始化显示
+elHigh.textContent  = highScore;
+elCount.textContent = playCount;
+muteBtn.textContent = SFX.isMuted() ? '🔇' : '🔊';
+
+// 初始绘制等待画面
+drawWaiting();
+
+// ============================================================
+// 绘制函数
+// ============================================================
+function draw() {
+  // 清空
+  ctx2d.fillStyle = '#0a0a15';
+  ctx2d.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 网格
+  ctx2d.strokeStyle = 'rgba(0,255,136,0.05)';
+  ctx2d.lineWidth = 1;
+  for (let i = 0; i <= COLS; i++) {
+    ctx2d.beginPath(); ctx2d.moveTo(i*GRID,0); ctx2d.lineTo(i*GRID,canvas.height); ctx2d.stroke();
+    ctx2d.beginPath(); ctx2d.moveTo(0,i*GRID); ctx2d.lineTo(canvas.width,i*GRID); ctx2d.stroke();
+  }
+
+  // 蛇
+  snake.forEach((seg, idx) => {
+    const gx = seg.x*GRID+GRID/2, gy = seg.y*GRID+GRID/2;
+    const gr = ctx2d.createRadialGradient(gx,gy,0,gx,gy,GRID/2);
+    if (idx === 0) {
+      gr.addColorStop(0,'#00ff88'); gr.addColorStop(1,'#00cc6a');
+    } else {
+      const a = 1-(idx/snake.length)*0.5;
+      gr.addColorStop(0,`rgba(0,255,136,${a})`); gr.addColorStop(1,`rgba(0,180,100,${a})`);
+    }
+    ctx2d.fillStyle = gr;
+    ctx2d.beginPath();
+    ctx2d.roundRect(seg.x*GRID+1, seg.y*GRID+1, GRID-2, GRID-2, 5);
+    ctx2d.fill();
+
+    // 蛇头眼睛
+    if (idx === 0) {
+      ctx2d.fillStyle = '#fff';
+      let e1x,e1y,e2x,e2y;
+      switch(direction){
+        case'right': e1x=seg.x*GRID+14;e1y=seg.y*GRID+6; e2x=seg.x*GRID+14;e2y=seg.y*GRID+14; break;
+        case'left':  e1x=seg.x*GRID+6; e1y=seg.y*GRID+6; e2x=seg.x*GRID+6; e2y=seg.y*GRID+14; break;
+        case'up':    e1x=seg.x*GRID+6; e1y=seg.y*GRID+6; e2x=seg.x*GRID+14;e2y=seg.y*GRID+6;  break;
+        case'down':  e1x=seg.x*GRID+6; e1y=seg.y*GRID+14;e2x=seg.x*GRID+14;e2y=seg.y*GRID+14;break;
+      }
+      ctx2d.beginPath(); ctx2d.arc(e1x,e1y,3,0,Math.PI*2); ctx2d.arc(e2x,e2y,3,0,Math.PI*2); ctx2d.fill();
+    }
+  });
+
+  // 食物
+  const fx=food.x*GRID+GRID/2, fy=food.y*GRID+GRID/2;
+  const fg=ctx2d.createRadialGradient(fx,fy,0,fx,fy,GRID/2);
+  fg.addColorStop(0,'#ff6b6b'); fg.addColorStop(1,'#ee5a5a');
+  ctx2d.fillStyle=fg;
+  ctx2d.shadowColor='#ff6b6b'; ctx2d.shadowBlur=10;
+  ctx2d.beginPath(); ctx2d.arc(fx,fy,GRID/2-2,0,Math.PI*2); ctx2d.fill();
+  ctx2d.shadowBlur=0;
+
+  // 暂停遮罩
+  if (isPaused) {
+    ctx2d.fillStyle='rgba(0,0,0,0.55)';
+    ctx2d.fillRect(0,0,canvas.width,canvas.height);
+    ctx2d.fillStyle='#fff'; ctx2d.font='bold 28px "Segoe UI","Microsoft YaHei",Arial';
+    ctx2d.textAlign='center';
+    ctx2d.fillText('⏸ 暂停中',canvas.width/2,canvas.height/2-14);
+    ctx2d.fillStyle='rgba(255,255,255,0.4)'; ctx2d.font='14px "Segoe UI",Arial';
+    ctx2d.fillText('按 空格 或 P 继续',canvas.width/2,canvas.height/2+18);
+  }
+}
+
+function drawWaiting() {
+  ctx2d.fillStyle='#0a0a15'; ctx2d.fillRect(0,0,canvas.width,canvas.height);
+  ctx2d.strokeStyle='rgba(0,255,136,0.05)'; ctx2d.lineWidth=1;
+  for(let i=0;i<=COLS;i++){
+    ctx2d.beginPath();ctx2d.moveTo(i*GRID,0);ctx2d.lineTo(i*GRID,canvas.height);ctx2d.stroke();
+    ctx2d.beginPath();ctx2d.moveTo(0,i*GRID);ctx2d.lineTo(canvas.width,i*GRID);ctx2d.stroke();
+  }
+  ctx2d.fillStyle='rgba(0,255,136,0.15)'; ctx2d.font='bold 22px "Segoe UI","Microsoft YaHei",Arial';
+  ctx2d.textAlign='center';
+  ctx2d.fillText('🐍',canvas.width/2,canvas.height/2-30);
+  ctx2d.fillText('按「新游戏」开始',canvas.width/2,canvas.height/2+10);
+}
+
+// ============================================================
+// 游戏逻辑
+// ============================================================
+function initGame() {
+  snake    = [{x:5,y:10},{x:4,y:10},{x:3,y:10}];
+  direction = nextDir = 'right';
+  score    = 0;
+  elScore.textContent = 0;
+  spawnFood();
+}
+
+function spawnFood() {
+  let f;
+  do { f={x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)}; }
+  while (snake.some(s=>s.x===f.x&&s.y===f.y));
+  food = f;
+}
+
+function step() {
+  if (isPaused) return;
+  direction = nextDir;
+  const head = {...snake[0]};
+  if (direction==='up')    head.y--;
+  if (direction==='down')  head.y++;
+  if (direction==='left')  head.x--;
+  if (direction==='right') head.x++;
+
+  // 撞墙
+  if (head.x<0||head.x>=COLS||head.y<0||head.y>=ROWS) { endGame(); return; }
+  // 撞自己
+  if (snake.some(s=>s.x===head.x&&s.y===head.y)) { endGame(); return; }
+
+  snake.unshift(head);
+
+  if (head.x===food.x&&head.y===food.y) {
+    score += 10;
+    elScore.textContent = score;
+    SFX.eat();
+    spawnFood();
+    if (gameSpeed > 50) {
+      gameSpeed -= 2;
+      clearInterval(gameLoop);
+      gameLoop = setInterval(tick, gameSpeed);
+    }
+  } else {
+    snake.pop();
+  }
+
+  draw();
+}
+
+function tick() { step(); }
+
+function endGame() {
+  isPlaying = false; gameDead = true;
+  clearInterval(gameLoop);
+
+  // 记录局数
+  playCount++;
+  Store.set('总局数', playCount);
+  elCount.textContent = playCount;
+
+  // 最高分
+  if (Store.tryBest('最高分', score)) {
+    highScore = score;
+    elHigh.textContent = highScore;
+    showRecordBanner();
+    SFX.record();
+  } else {
+    SFX.gameOver();
+  }
+
+  setMessage('游戏结束！按 Enter 或「新游戏」重开', 'lose');
+  pauseBtn.textContent = '⏸ 暂停';
+}
+
+function startGame() {
+  if (isPlaying) { clearInterval(gameLoop); }
+  isPlaying = true; isPaused = false; gameDead = false;
+  gameSpeed = 150;
+  setMessage('');
+  pauseBtn.textContent = '⏸ 暂停';
+  initGame();
+  draw();
+  clearInterval(gameLoop);
+  gameLoop = setInterval(tick, gameSpeed);
+}
+
+function togglePause() {
+  if (!isPlaying || gameDead) return;
+  isPaused = !isPaused;
+  pauseBtn.textContent = isPaused ? '▶ 继续' : '⏸ 暂停';
+  if (!isPaused) draw();
+}
+
+function setMessage(text, type='') {
+  elMessage.textContent = text;
+  elMessage.className = `game-message${type?' '+type:''}`;
+}
+
+function showRecordBanner() {
+  const el = document.createElement('div');
+  el.className = 'record-banner';
+  el.textContent = '🏆 新纪录！';
+  document.body.appendChild(el);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>el.classList.add('show')));
+  setTimeout(()=>{el.classList.remove('show');setTimeout(()=>el.remove(),400);},2500);
+}
+
+// ============================================================
+// 输入处理
+// ============================================================
+document.addEventListener('keydown', e => {
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  if (!isPlaying || gameDead) {
+    if (e.code==='Space'||e.code==='Enter') startGame();
+    return;
+  }
+  switch(e.code) {
+    case'ArrowUp':   case'KeyW': if(direction!=='down')  nextDir='up';    break;
+    case'ArrowDown': case'KeyS': if(direction!=='up')    nextDir='down';  break;
+    case'ArrowLeft': case'KeyA': if(direction!=='right') nextDir='left';  break;
+    case'ArrowRight':case'KeyD': if(direction!=='left')  nextDir='right'; break;
+    case'Space': case'KeyP': togglePause(); break;
+    case'Enter': if(gameDead) startGame(); break;
+    case'KeyM': SFX.toggle(); muteBtn.textContent=SFX.isMuted()?'🔇':'🔊'; break;
+  }
+});
+
+// 触屏方向键
+document.getElementById('upBtn').addEventListener('pointerdown',    ()=>{if(direction!=='down')  nextDir='up';});
+document.getElementById('downBtn').addEventListener('pointerdown',  ()=>{if(direction!=='up')    nextDir='down';});
+document.getElementById('leftBtn').addEventListener('pointerdown',  ()=>{if(direction!=='right') nextDir='left';});
+document.getElementById('rightBtn').addEventListener('pointerdown', ()=>{if(direction!=='left')  nextDir='right';});
+
+// 触屏滑动
+let tx=0,ty=0;
+canvas.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;e.preventDefault();},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-tx, dy=e.changedTouches[0].clientY-ty;
+  if(Math.abs(dx)>Math.abs(dy)){dx>30&&direction!=='left'&&(nextDir='right');dx<-30&&direction!=='right'&&(nextDir='left');}
+  else                          {dy>30&&direction!=='up'  &&(nextDir='down' );dy<-30&&direction!=='down' &&(nextDir='up');}
+  e.preventDefault();
+},{passive:false});
+
+// 按钮事件
+startBtn.addEventListener('click', startGame);
+pauseBtn.addEventListener('click', togglePause);
+muteBtn.addEventListener('click',  ()=>{ SFX.toggle(); muteBtn.textContent=SFX.isMuted()?'🔇':'🔊'; });
+</script>
+</body>
+</html>

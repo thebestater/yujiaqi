@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<!--
+╔══════════════════════════════════════════════════════════════════════════════╗
+║  小游戏合集 — 游戏开发模板 v1.1                                              ║
+║  复制此文件到新游戏文件夹，按注释说明填写游戏内容                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+【开发前置清单 — 在动手写代码之前，先向用户确认以下所有信息】
+
+A. 基本信息（必填）
+   A1. 游戏中文名称（用于文件夹命名、标题显示）
+   A2. 游戏的一句话简介（用于大厅卡片描述）
+   A3. 游戏代表 emoji（用于标题和卡片）
+   A4. 期望主题颜色（从调色板选择或提供自定义色值）
+
+B. 核心玩法（必填）
+   B1. 游戏的具体规则（越详细越好）
+   B2. 胜利/通关条件（或无尽模式说明）
+   B3. 失败/游戏结束条件
+   B4. 是否有难度等级？各难度差异是什么？
+
+C. 计分与进度（必填）
+   C1. 计分规则（如何得分/加分）
+   C2. 是否有等级/关卡系统？等级影响什么？
+   C3. localStorage 需要存储哪些内容
+   C4. 是否需要计时器？正计时还是倒计时？
+
+D. 视觉与技术（必填）
+   D1. Canvas 绘图（动画感强）还是 DOM 元素（表格/棋盘类）？
+   D2. 游戏区域期望尺寸（宽 x 高）
+   D3. 特殊视觉需求（粒子效果/连击动画/特殊字体等）
+
+E. 操作方式（必填）
+   E1. 主要输入：键盘 / 鼠标 / 两者均有？
+   E2. 具体按键分配（或采用标准方向键方案）
+   E3. 是否需要触屏方向键（Windows 触屏设备）？
+   E4. 是否需要鼠标点击/拖拽交互？
+
+F. 可选功能（YES/NO 确认）
+   F1. 音效（需要哪些事件有声音）
+   F2. 动画特效（粒子/震屏等）
+   F3. 暂停功能
+   F4. 历史最佳成绩显示
+   F5. 连击/连锁机制
+-->
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- 修改为：[游戏名] — 小游戏合集 -->
+  <title>[游戏名] — 小游戏合集</title>
+  <style>
+    /* ============================================================
+       设计系统令牌（每个游戏复制此块，只改 --accent 和 --glow-*）
+       ============================================================ */
+    :root {
+      --bg-deep:        #0a0a15;   /* canvas 背景最深层 */
+      --bg-primary:     #1a1a2e;   /* 页面主背景 */
+      --bg-secondary:   #16213e;   /* 渐变中段 */
+      --bg-tertiary:    #0f3460;   /* 渐变末端 */
+      --bg-panel:       rgba(255,255,255,0.05);
+      --bg-panel-hover: rgba(255,255,255,0.08);
+
+      /* ★ 本游戏主题色（在此修改） */
+      --accent:         #00ff88;
+      --accent-dim:     #00cc6a;
+
+      --text-primary:   #ffffff;
+      --text-secondary: #aaaaaa;
+      --text-muted:     #666666;
+      --border-subtle:  rgba(255,255,255,0.10);
+      --border-medium:  rgba(255,255,255,0.20);
+
+      /* ★ 发光效果随 --accent 变化（在此同步修改 rgb 值） */
+      --glow-accent:    0 0 20px rgba(0,255,136,0.35);
+      --glow-strong:    0 0 40px rgba(0,255,136,0.50);
+      --glow-title:     0 0 30px rgba(0,255,136,0.60);
+
+      --radius-sm:  6px;
+      --radius-md:  10px;
+      --radius-lg:  16px;
+      --radius-xl:  24px;
+
+      --font-ui:   'Segoe UI', 'Microsoft YaHei', Arial, sans-serif;
+      --font-mono: 'Consolas', 'Courier New', monospace;
+
+      --transition-fast:   0.15s ease;
+      --transition-normal: 0.25s ease;
+    }
+
+    /* 全局基础样式（不要修改） */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg,
+        var(--bg-primary)   0%,
+        var(--bg-secondary) 50%,
+        var(--bg-tertiary)  100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-ui);
+      color: var(--text-primary);
+      user-select: none;
+    }
+
+    /* ① 返回大厅链接（固定左上角，不要修改） */
+    .back-link {
+      position: fixed;
+      top: 16px; left: 16px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-panel);
+      transition: all var(--transition-fast);
+      z-index: 100;
+    }
+    .back-link:hover { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow-accent); }
+
+    /* ② 标题区 */
+    .game-header { text-align: center; margin-bottom: 20px; }
+    .game-title {
+      font-size: 2.2rem;
+      color: var(--accent);
+      text-shadow: var(--glow-title);
+      letter-spacing: 3px;
+      margin-bottom: 6px;
+    }
+    .game-subtitle { color: var(--text-secondary); font-size: 0.88rem; letter-spacing: 1px; }
+
+    /* ③ 控制栏（按钮/难度选择） */
+    .control-bar { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; flex-wrap: wrap; justify-content: center; }
+
+    /* 标准按钮（不要修改 class 名） */
+    .btn {
+      padding: 9px 22px;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      font-size: 0.92rem;
+      font-weight: 600;
+      font-family: var(--font-ui);
+      transition: all var(--transition-fast);
+      min-width: 88px;
+      min-height: 44px;
+    }
+    .btn-primary { background: var(--accent); color: #1a1a2e; }
+    .btn-primary:hover { background: var(--accent-dim); transform: translateY(-1px); box-shadow: var(--glow-accent); }
+    .btn-secondary { background: var(--bg-panel); color: var(--text-primary); border: 1px solid var(--border-subtle); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); background: var(--bg-panel-hover); }
+    .btn.active { background: var(--accent); color: #1a1a2e; border-color: var(--accent); }
+    .btn:active { transform: scale(0.97); }
+
+    /* ④ 信息栏 */
+    .info-bar {
+      display: flex; gap: 28px; padding: 10px 28px;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      font-size: 1.05rem;
+      margin-bottom: 16px;
+      flex-wrap: wrap; justify-content: center;
+    }
+    .info-item { display: flex; align-items: center; gap: 7px; white-space: nowrap; }
+    .info-value { color: var(--accent); font-weight: 700; font-family: var(--font-mono); min-width: 3ch; text-align: right; }
+
+    /* ⑤ 游戏主体区域 */
+    .game-area { position: relative; }
+    canvas {
+      display: block;
+      background: var(--bg-deep);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--glow-accent);
+      touch-action: none;
+    }
+
+    /* ⑥ 游戏状态消息 */
+    .game-message {
+      min-height: 2.2rem; font-size: 1.3rem; font-weight: bold;
+      text-align: center; margin-top: 16px;
+      text-shadow: 0 0 10px currentColor;
+    }
+    .game-message.win  { color: #81c784; }
+    .game-message.lose { color: #e94560; }
+    .game-message.info { color: var(--accent); }
+
+    /* ⑦ 帮助说明 */
+    .help-section {
+      margin-top: 20px; color: var(--text-muted); font-size: 0.82rem;
+      max-width: 400px; text-align: center;
+    }
+    .help-section summary { cursor: pointer; color: var(--text-secondary); margin-bottom: 8px; }
+    .help-section div { line-height: 1.9; }
+
+    /* 触屏方向键（方向类游戏使用，默认隐藏，触屏自动显示） */
+    .touch-controls {
+      display: none;
+      grid-template-areas: ". up ." "left . right" ". down .";
+      grid-template-columns: repeat(3, 56px);
+      grid-template-rows: repeat(3, 56px);
+      gap: 6px;
+      margin-top: 16px;
+    }
+    @media (pointer: coarse) { .touch-controls { display: grid; } }
+    .touch-btn {
+      width: 56px; height: 56px;
+      border-radius: var(--radius-md);
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-size: 1.4rem;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .touch-btn:active { background: var(--bg-panel-hover); border-color: var(--accent); }
+    .touch-btn.up    { grid-area: up; }
+    .touch-btn.left  { grid-area: left; }
+    .touch-btn.right { grid-area: right; }
+    .touch-btn.down  { grid-area: down; }
+
+    /* 破纪录横幅（JS 动态插入，不修改） */
+    .record-banner {
+      position: fixed; top: 70px; left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--accent); color: #1a1a2e;
+      padding: 10px 24px; border-radius: 25px;
+      font-weight: 700; font-size: 1.1rem;
+      box-shadow: var(--glow-strong);
+      transition: all 0.4s ease; z-index: 999;
+      opacity: 0; pointer-events: none;
+    }
+    .record-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  </style>
+</head>
+<body>
+
+  <!-- ① 返回大厅 -->
+  <a class="back-link" href="../index.html">← 游戏大厅</a>
+
+  <!-- ② 标题区（修改 emoji 和游戏名） -->
+  <header class="game-header">
+    <h1 class="game-title">[emoji] [游戏名]</h1>
+    <p class="game-subtitle">[一句话操作说明，例如：方向键移动 · 空格暂停]</p>
+  </header>
+
+  <!-- ③ 控制栏 -->
+  <div class="control-bar">
+    <button class="btn btn-primary" id="btnStart">🔄 新游戏</button>
+    <button class="btn btn-secondary" id="btnPause">⏸ 暂停</button>
+    <button class="btn btn-secondary" id="btnMute">🔊</button>
+    <!-- 如有难度选择，在此添加 -->
+  </div>
+
+  <!-- ④ 信息栏（按需增减 info-item） -->
+  <div class="info-bar">
+    <div class="info-item">🏆 最高分 <span class="info-value" id="elBest">0</span></div>
+    <div class="info-item">⭐ 当前分 <span class="info-value" id="elScore">0</span></div>
+    <!-- <div class="info-item">⏱ 时间 <span class="info-value" id="elTime">0</span>s</div> -->
+    <!-- <div class="info-item">🎯 等级 <span class="info-value" id="elLevel">1</span></div> -->
+  </div>
+
+  <!-- ⑤ 游戏主体（Canvas 版本，DOM 版本自行替换） -->
+  <main class="game-area">
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+  </main>
+
+  <!-- 触屏方向键（方向类游戏保留，其他删除） -->
+  <div class="touch-controls">
+    <button class="touch-btn up"    onpointerdown="onSwipeBtn('up')">⬆</button>
+    <button class="touch-btn left"  onpointerdown="onSwipeBtn('left')">⬅</button>
+    <button class="touch-btn right" onpointerdown="onSwipeBtn('right')">➡</button>
+    <button class="touch-btn down"  onpointerdown="onSwipeBtn('down')">⬇</button>
+  </div>
+
+  <!-- ⑥ 状态消息 -->
+  <div class="game-message" id="gameMessage" aria-live="polite"></div>
+
+  <!-- ⑦ 帮助说明（按需修改按键内容） -->
+  <details class="help-section">
+    <summary>📖 操作说明</summary>
+    <div>
+      方向键 / WASD — 移动方向<br>
+      空格 / P — 暂停 / 继续<br>
+      Enter — 开始 / 重新开始<br>
+      R — 重开（游戏结束后）<br>
+      M — 静音 / 取消静音
+    </div>
+  </details>
+
+<script>
+// ============================================================
+// 0. 配置区（修改这里）
+// ============================================================
+const GAME_NAME = '[游戏名]';           // 与文件夹名相同
+const GAME_KEY  = `小游戏_${GAME_NAME}`;
+
+// ============================================================
+// 1. DOM 引用
+// ============================================================
+const canvas     = document.getElementById('gameCanvas');
+const ctx        = canvas.getContext('2d');
+const elBest     = document.getElementById('elBest');
+const elScore    = document.getElementById('elScore');
+const elMessage  = document.getElementById('gameMessage');
+const btnStart   = document.getElementById('btnStart');
+const btnPause   = document.getElementById('btnPause');
+const btnMute    = document.getElementById('btnMute');
+
+// ============================================================
+// 2. 存储工具
+// ============================================================
+const Store = {
+  get(field, fallback = 0)   { const v = localStorage.getItem(`${GAME_KEY}_${field}`); return v !== null ? JSON.parse(v) : fallback; },
+  set(field, value)           { localStorage.setItem(`${GAME_KEY}_${field}`, JSON.stringify(value)); },
+  trySetBest(field, value, lowerIsBetter = false) {
+    const cur = this.get(field, lowerIsBetter ? Infinity : 0);
+    const better = lowerIsBetter ? value < cur : value > cur;
+    if (better) this.set(field, value);
+    return better;
+  }
+};
+
+// ============================================================
+// 3. 音效系统（Web Audio API，无需音频文件）
+// ============================================================
+const SFX = (() => {
+  let actx = null;
+  let muted = Store.get('全局静音', false);
+  function getCtx() {
+    if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function beep(freq, dur, type = 'square', vol = 0.2) {
+    if (muted) return;
+    try {
+      const c = getCtx();
+      const osc = c.createOscillator(), gain = c.createGain();
+      osc.connect(gain); gain.connect(c.destination);
+      osc.type = type; osc.frequency.setValueAtTime(freq, c.currentTime);
+      gain.gain.setValueAtTime(vol, c.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + dur);
+      osc.start(c.currentTime); osc.stop(c.currentTime + dur);
+    } catch(e) {}
+  }
+  return {
+    isMuted: () => muted,
+    toggleMute() {
+      muted = !muted;
+      localStorage.setItem('小游戏_全局_静音', JSON.stringify(muted));
+      return muted;
+    },
+    eat()     { beep(660, 0.08, 'square', 0.2); },
+    score()   { beep(880, 0.12, 'sine',   0.25); },
+    clear()   { [440, 550, 660].forEach((f,i) => setTimeout(()=>beep(f,0.1,'sine',0.2), i*60)); },
+    gameOver(){ beep(180, 0.5, 'sawtooth', 0.3); },
+    win()     { [523,659,784,1047].forEach((f,i) => setTimeout(()=>beep(f,0.15,'sine',0.25), i*100)); },
+    record()  { [523,659,784,1047,1319].forEach((f,i) => setTimeout(()=>beep(f,0.12,'sine',0.25), i*80)); },
+    flag()    { beep(440, 0.05, 'square', 0.15); },
+  };
+})();
+
+// ============================================================
+// 4. 游戏状态
+// ============================================================
+let gameRunning = false;
+let isPaused    = false;
+let isGameOver  = false;
+let score       = 0;
+let bestScore   = Store.get('最高分', 0);
+let animId      = null;
+
+// ============================================================
+// 5. 游戏逻辑（在此填写）
+// ============================================================
+function update() {
+  // TODO: 游戏每帧逻辑更新
+}
+
+function render() {
+  // TODO: Canvas 绘制
+  ctx.fillStyle = '#0a0a15';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+
+// ============================================================
+// 6. 游戏循环（使用 requestAnimationFrame + 时间差分）
+// ============================================================
+let lastTime = 0;
+const TICK_MS = 150; // 游戏逻辑刷新间隔（按需调整）
+
+function gameLoop(timestamp) {
+  if (!gameRunning || isPaused) return;
+  const delta = timestamp - lastTime;
+  if (delta >= TICK_MS) {
+    lastTime = timestamp - (delta % TICK_MS);
+    update();
+    render();
+  }
+  animId = requestAnimationFrame(gameLoop);
+}
+
+// ============================================================
+// 7. 游戏控制
+// ============================================================
+function startGame() {
+  isGameOver  = false;
+  isPaused    = false;
+  score       = 0;
+  gameRunning = true;
+  setMessage('');
+  updateScoreUI();
+  btnPause.textContent = '⏸ 暂停';
+  // TODO: 重置游戏特定状态
+  cancelAnimationFrame(animId);
+  lastTime = 0;
+  animId = requestAnimationFrame(gameLoop);
+}
+
+function togglePause() {
+  if (!gameRunning || isGameOver) return;
+  isPaused = !isPaused;
+  btnPause.textContent = isPaused ? '▶ 继续' : '⏸ 暂停';
+  if (!isPaused) { lastTime = 0; animId = requestAnimationFrame(gameLoop); }
+}
+
+function endGame(win = false) {
+  gameRunning = false;
+  isGameOver  = true;
+  cancelAnimationFrame(animId);
+  // 记录局数
+  Store.set('总局数', Store.get('总局数', 0) + 1);
+  // 更新最高分
+  if (Store.trySetBest('最高分', score)) {
+    bestScore = score;
+    elBest.textContent = bestScore;
+    showRecordBanner();
+    SFX.record();
+  } else {
+    win ? SFX.win() : SFX.gameOver();
+  }
+  setMessage(win ? '🎉 恭喜通关！' : '游戏结束！按 Enter 重开', win ? 'win' : 'lose');
+}
+
+function setMessage(text, type = '') {
+  elMessage.textContent = text;
+  elMessage.className = `game-message${type ? ' ' + type : ''}`;
+}
+
+function updateScoreUI() {
+  elScore.textContent = score;
+  elBest.textContent  = bestScore;
+}
+
+// 破纪录横幅动画
+function showRecordBanner(label = '新纪录') {
+  const el = document.createElement('div');
+  el.className = 'record-banner';
+  el.textContent = `🏆 ${label}！`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add('show')));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 2500);
+}
+
+// ============================================================
+// 8. 键盘处理
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+  switch (e.code) {
+    case 'Space': case 'KeyP': togglePause(); break;
+    case 'Enter': if (!gameRunning || isGameOver) startGame(); break;
+    case 'KeyR':  if (isGameOver) startGame(); break;
+    case 'Escape': isPaused ? togglePause() : (gameRunning && togglePause()); break;
+    case 'KeyM': SFX.toggleMute(); btnMute.textContent = SFX.isMuted() ? '🔇' : '🔊'; break;
+    // TODO: 在此添加游戏专属按键
+  }
+});
+
+// 触屏滑动（Canvas 游戏）
+let touchX = 0, touchY = 0;
+canvas.addEventListener('touchstart', e => { touchX = e.touches[0].clientX; touchY = e.touches[0].clientY; e.preventDefault(); }, {passive:false});
+canvas.addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - touchX;
+  const dy = e.changedTouches[0].clientY - touchY;
+  if (Math.abs(dx) > Math.abs(dy)) { if (dx >  30) onSwipeBtn('right'); else if (dx < -30) onSwipeBtn('left'); }
+  else                              { if (dy >  30) onSwipeBtn('down');  else if (dy < -30) onSwipeBtn('up'); }
+  e.preventDefault();
+}, {passive:false});
+
+function onSwipeBtn(dir) {
+  // TODO: 根据方向执行动作
+}
+
+// ============================================================
+// 9. 按钮事件
+// ============================================================
+btnStart.addEventListener('click', startGame);
+btnPause.addEventListener('click', togglePause);
+btnMute.addEventListener('click', () => {
+  SFX.toggleMute();
+  btnMute.textContent = SFX.isMuted() ? '🔇' : '🔊';
+});
+
+// ============================================================
+// 10. 初始化
+// ============================================================
+elBest.textContent  = bestScore;
+elScore.textContent = 0;
+btnMute.textContent = SFX.isMuted() ? '🔇' : '🔊';
+// 绘制初始等待画面
+render();
+ctx.fillStyle = 'rgba(255,255,255,0.12)';
+ctx.font = 'bold 20px var(--font-ui, "Segoe UI")';
+ctx.textAlign = 'center';
+ctx.fillText('按「新游戏」开始', canvas.width / 2, canvas.height / 2);
+</script>
+</body>
+</html>
