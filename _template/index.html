@@ -42,6 +42,13 @@ F. 可选功能（YES/NO 确认）
    F3. 暂停功能
    F4. 历史最佳成绩显示
    F5. 连击/连锁机制
+
+【系统级强制规则】
+   G1. 每次修改代码后，必须同步更新该游戏的 CHANGELOG.md
+   G2. 所有页面必须适配手机(≤480px)、平板(≤768px)、桌面(≥769px)、触屏
+   G3. Canvas 游戏必须添加 touch-action: none
+   G4. 方向类游戏必须提供虚拟按键（@media pointer: coarse 显示）
+   G5. 点击类游戏必须提供触屏替代方案（如插旗模式替代右键）
 -->
 <html lang="zh-CN">
 <head>
@@ -235,6 +242,26 @@ F. 可选功能（YES/NO 确认）
       opacity: 0; pointer-events: none;
     }
     .record-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ⑧ 响应式适配（所有游戏必须包含）
+       - 768px 以下：平板布局调整
+       - 480px 以下：手机布局调整
+       - pointer: coarse：触屏设备显示虚拟控制 */
+    @media (max-width: 768px) {
+      .game-title { font-size: 1.8rem; }
+      .info-bar { gap: 14px; padding: 8px 16px; font-size: 0.92rem; }
+      .control-bar .btn { padding: 7px 14px; font-size: 0.85rem; }
+    }
+    @media (max-width: 480px) {
+      body { padding: 10px; }
+      .game-title { font-size: 1.5rem; letter-spacing: 1px; }
+      .game-subtitle { font-size: 0.78rem; }
+      .info-bar { gap: 10px; padding: 6px 12px; font-size: 0.82rem; }
+      .control-bar { gap: 6px; }
+      .control-bar .btn { padding: 5px 10px; font-size: 0.78rem; min-width: 68px; min-height: 36px; }
+      .back-link { font-size: 0.75rem; padding: 4px 10px; }
+      .help-section { font-size: 0.75rem; }
+    }
   </style>
 </head>
 <body>

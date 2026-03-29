@@ -157,6 +157,38 @@
     opacity: 0; pointer-events: none;
   }
   .record-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 插旗模式按钮 */
+  .flag-toggle {
+    display: none;
+    padding: 8px 16px; border-radius: var(--radius-md);
+    background: var(--bg-panel); border: 1px solid var(--border-subtle);
+    color: var(--text-primary); font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: all var(--transition-fast);
+    font-family: var(--font-ui);
+  }
+  .flag-toggle.active { background: var(--accent); color: #1a1a2e; border-color: var(--accent); }
+  @media (pointer: coarse) { .flag-toggle { display: inline-flex; } }
+
+  /* 响应式适配 */
+  @media (max-width: 768px) {
+    h1 { font-size: 1.8rem; }
+    .info-bar { gap: 14px; padding: 8px 16px; font-size: 0.9rem; }
+    .best-times { gap: 10px; padding: 8px 14px; }
+    .controls { gap: 6px; }
+    .btn { padding: 6px 14px; font-size: 0.82rem; min-height: 36px; }
+  }
+  @media (max-width: 480px) {
+    body { padding: 10px; }
+    h1 { font-size: 1.5rem; margin-bottom: 4px; }
+    .subtitle { font-size: 0.78rem; margin-bottom: 12px; }
+    .info-bar { gap: 10px; padding: 6px 12px; font-size: 0.82rem; }
+    .controls { gap: 4px; }
+    .difficulty-btns { gap: 4px; }
+    .btn { padding: 5px 10px; font-size: 0.78rem; }
+    .back-link { font-size: 0.75rem; padding: 4px 10px; }
+    .help-section { font-size: 0.72rem; }
+  }
 </style>
 </head>
 <body>
@@ -173,6 +205,7 @@
     <button class="btn btn-secondary"        id="hard"   onclick="setDifficulty('hard')">💀 困难</button>
   </div>
   <button class="btn btn-primary"   onclick="newGame()">🔄 新游戏</button>
+  <button class="flag-toggle" id="flagToggle" onclick="toggleFlagMode()">🚩 插旗模式</button>
   <button class="btn btn-secondary" id="muteBtn">🔊</button>
 </div>
 
@@ -352,14 +385,34 @@ function placeMines(safeR,safeC) {
 // ============================================================
 // 棋盘渲染
 // ============================================================
+let cellSize = 36;
+let flagMode = false;
+
+function calcCellSize() {
+  const maxWidth = window.innerWidth - 40;
+  const idealSize = Math.floor((maxWidth - config.cols * 3 - 28) / config.cols);
+  cellSize = Math.min(36, Math.max(22, idealSize));
+}
+
+function toggleFlagMode() {
+  flagMode = !flagMode;
+  const btn = document.getElementById('flagToggle');
+  btn.classList.toggle('active', flagMode);
+  btn.textContent = flagMode ? '🚩 插旗中' : '🚩 插旗模式';
+}
+
 function renderBoard() {
+  calcCellSize();
   const {rows,cols}=config;
   const el=document.getElementById('board');
-  el.style.gridTemplateColumns=`repeat(${cols},36px)`;
+  el.style.gridTemplateColumns=`repeat(${cols},${cellSize}px)`;
   el.innerHTML='';
   for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
     const cell=document.createElement('div');
     cell.className='cell hidden';
+    cell.style.width=cellSize+'px';
+    cell.style.height=cellSize+'px';
+    cell.style.fontSize=(cellSize*0.024)+'rem';
     cell.dataset.r=r; cell.dataset.c=c;
     cell.addEventListener('click',onLeftClick);
     cell.addEventListener('contextmenu',onRightClick);
@@ -376,6 +429,15 @@ function getCellEl(r,c) { return document.querySelector(`.cell[data-r="${r}"][da
 function onLeftClick() {
   if(gameOver||gameWon) return;
   const r=+this.dataset.r, c=+this.dataset.c;
+  // 插旗模式：触屏替代右键
+  if(flagMode && !revealed[r][c]) {
+    flagged[r][c]=!flagged[r][c];
+    flagCount+=flagged[r][c]?1:-1;
+    document.getElementById('flagCount').textContent=flagCount;
+    updateCell(r,c);
+    flagged[r][c]?SFX.flag():SFX.unflag();
+    return;
+  }
   if(flagged[r][c]||revealed[r][c]) return;
   if(firstClick){
     firstClick=false;
@@ -543,6 +605,12 @@ document.getElementById('muteBtn').addEventListener('click',()=>{
 // 初始化
 // ============================================================
 newGame();
+window.addEventListener('resize',()=>{
+  calcCellSize();
+  const cells=document.querySelectorAll('.cell');
+  cells.forEach(c=>{c.style.width=cellSize+'px';c.style.height=cellSize+'px';c.style.fontSize=(cellSize*0.024)+'rem';});
+  document.getElementById('board').style.gridTemplateColumns=`repeat(${config.cols},${cellSize}px)`;
+});
 </script>
 </body>
 </html>

@@ -138,6 +138,42 @@
     opacity: 0; pointer-events: none;
   }
   .record-banner.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* 触屏控制 */
+  .touch-controls {
+    display: none;
+    gap: 8px; margin-top: 12px;
+    justify-content: center; align-items: center;
+    flex-wrap: wrap;
+  }
+  @media (pointer: coarse) { .touch-controls { display: flex; } }
+  .touch-btn {
+    width: 56px; height: 56px; border-radius: 10px;
+    background: var(--bg-panel); border: 1px solid var(--border-subtle);
+    color: var(--text-primary); font-size: 1.4rem;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: all var(--transition-fast);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .touch-btn:active { background: var(--bg-panel-hover); border-color: var(--accent); }
+  .touch-btn.wide { width: 72px; font-size: 1.1rem; }
+
+  /* 响应式布局 */
+  @media (max-width: 620px) {
+    body { padding: 10px; }
+    .game-wrapper { flex-direction: column; align-items: center; gap: 10px; padding: 10px; }
+    .left-panel { flex-direction: row; width: auto; gap: 8px; flex-wrap: wrap; justify-content: center; }
+    .right-panel { flex-direction: row; width: auto; gap: 8px; flex-wrap: wrap; justify-content: center; align-items: center; }
+    .panel-box { padding: 8px 12px; min-width: 70px; text-align: center; }
+    .panel-box .value { font-size: 1.2rem; }
+    .panel-box h3 { font-size: 0.6rem; }
+    #next-canvas { width: 60px; height: 60px; }
+    .key-guide { display: none; }
+    .back-link { font-size: 0.75rem; padding: 4px 10px; }
+  }
+  @media (max-width: 360px) {
+    #game-canvas { width: 260px; height: 520px; }
+  }
 </style>
 </head>
 <body>
@@ -197,6 +233,15 @@
   <p>最终得分</p>
   <div class="final-score" id="final-score">0</div>
   <button onclick="restartGame()">🔄 再来一局</button>
+</div>
+
+<!-- 触屏控制 -->
+<div class="touch-controls" id="touchControls">
+  <button class="touch-btn" id="tcLeft">⬅</button>
+  <button class="touch-btn" id="tcRotate">🔄</button>
+  <button class="touch-btn" id="tcRight">➡</button>
+  <button class="touch-btn" id="tcDown">⬇</button>
+  <button class="touch-btn wide" id="tcDrop">⏬</button>
 </div>
 
 <script>
@@ -509,6 +554,39 @@ document.getElementById('btn-start').addEventListener('click',startGame);
 document.getElementById('btn-mute').addEventListener('click',()=>{
   SFX.toggle();
   document.getElementById('btn-mute').textContent=SFX.isMuted()?'🔇 静音':'🔊 音效';
+});
+
+// 触屏控制
+document.getElementById('tcLeft').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(!gameRunning||paused) return;
+  if(!collide(currentPiece,-1,0)) currentPiece.x--;
+});
+document.getElementById('tcRight').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(!gameRunning||paused) return;
+  if(!collide(currentPiece,1,0)) currentPiece.x++;
+});
+document.getElementById('tcRotate').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(!gameRunning||paused) return;
+  rotatePiece();
+});
+document.getElementById('tcDown').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(!gameRunning||paused) return;
+  if(!collide(currentPiece,0,1)){currentPiece.y++;score+=1;updateUI();}
+});
+document.getElementById('tcDrop').addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(!gameRunning||paused) return;
+  while(!collide(currentPiece,0,1)){currentPiece.y++;score+=2;}
+  updateUI(); merge(); clearLines(); spawnPiece(); SFX.land();
+});
+// 防止触屏按钮长按弹出菜单
+document.querySelectorAll('.touch-btn').forEach(b=>{
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
 });
 </script>
 </body>

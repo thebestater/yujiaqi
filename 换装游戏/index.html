@@ -24,7 +24,7 @@
 
 /* ===== 重置 & 基础 ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 100%; height: 100%; overflow: hidden; }
+html, body { width: 100%; height: 100%; overflow: hidden; overflow-y: auto; }
 body {
   background: linear-gradient(160deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
   font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
@@ -295,6 +295,25 @@ body {
   .char-display { min-height: 200px; }
   .item-grid { grid-template-columns: repeat(4, 1fr); }
   .scene-card-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .game-title { font-size: clamp(28px, 7vw, 42px); }
+  .game-subtitle { font-size: 13px; }
+  .sparkle-row { font-size: 26px; letter-spacing: 8px; }
+  .char-preview-row { gap: 12px; }
+  .char-preview-card { padding: 10px 12px; }
+  .char-card-row { gap: 12px; }
+  .char-card { width: 140px; padding: 16px 14px 14px; }
+  .char-card-name { font-size: 15px; }
+  .screen-title { font-size: 20px; }
+  #s-scenes { padding: 50px 12px 12px; }
+  .item-grid { grid-template-columns: repeat(3, 1fr); }
+  .item-color { width: 42px; height: 42px; font-size: 22px; }
+  .dressing-layout { padding: 48px 8px 8px; gap: 8px; }
+  .outfit-panel { max-height: 48vh; }
+  .char-display { min-height: 180px; }
+  .back-link { font-size: 11px; padding: 4px 10px; }
+  .mute-btn { width: 34px; height: 34px; font-size: 15px; }
 }
 </style>
 </head>
