@@ -342,12 +342,14 @@ const CHARS = [
     skin:'#FFE0BD', eyeColor:'#5a3200',
     hairBack:`
       <ellipse cx="80" cy="46" rx="45" ry="48" fill="#D4A017"/>
-      <path d="M35,38 Q20,82 24,155" stroke="#D4A017" stroke-width="24" fill="none" stroke-linecap="round"/>
-      <path d="M125,38 Q140,82 136,155" stroke="#D4A017" stroke-width="24" fill="none" stroke-linecap="round"/>`,
+      <path d="M35,38 Q16,80 26,120 Q18,142 28,158" stroke="#D4A017" stroke-width="22" fill="none" stroke-linecap="round"/>
+      <path d="M125,38 Q144,80 134,120 Q142,142 132,158" stroke="#D4A017" stroke-width="22" fill="none" stroke-linecap="round"/>`,
     hairFront:`
       <path d="M44,18 Q62,2 80,5 Q98,2 116,18 Q110,50 102,58 Q96,36 88,38 Q80,44 72,38 Q64,36 58,58 Q50,50 44,18Z" fill="#D4A017"/>
-      <path d="M60,36 Q56,54 58,64" stroke="#c58c10" stroke-width="4" fill="none" stroke-linecap="round"/>
-      <path d="M100,36 Q104,54 102,64" stroke="#c58c10" stroke-width="4" fill="none" stroke-linecap="round"/>`,
+      <path d="M50,28 Q46,40 50,52" stroke="#c58c10" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M60,34 Q56,46 60,56" stroke="#c58c10" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M100,34 Q104,46 100,56" stroke="#c58c10" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M110,28 Q114,40 110,52" stroke="#c58c10" stroke-width="3.5" fill="none" stroke-linecap="round"/>`,
   },
   {
     id:2, defaultName:'小星', gender:'female',
@@ -377,11 +379,12 @@ const CHARS = [
     birthday:'04月12日', zodiac:'白羊座',
     skin:'#FFDBB4', eyeColor:'#5a3200',
     hairBack:`
-      <ellipse cx="80" cy="46" rx="40" ry="40" fill="#954535"/>
-      <path d="M40,42 Q32,68 35,96" stroke="#954535" stroke-width="13" fill="none" stroke-linecap="round"/>
-      <path d="M120,42 Q128,68 125,96" stroke="#954535" stroke-width="13" fill="none" stroke-linecap="round"/>`,
+      <ellipse cx="80" cy="46" rx="38" ry="32" fill="#954535"/>
+      <path d="M42,48 Q35,66 38,82" stroke="#954535" stroke-width="13" fill="none" stroke-linecap="round"/>
+      <path d="M118,48 Q125,66 122,82" stroke="#954535" stroke-width="13" fill="none" stroke-linecap="round"/>`,
     hairFront:`
-      <path d="M44,24 Q80,6 116,24 Q112,50 104,57 Q97,37 80,35 Q63,37 56,57 Q48,50 44,24Z" fill="#954535"/>`,
+      <path d="M48,24 Q80,7 112,24 Q108,48 101,54 Q96,36 80,34 Q65,36 60,52 Q51,42 48,24Z" fill="#954535"/>
+      <path d="M48,26 Q40,20 37,32 Q46,36 52,28Z" fill="#954535"/>`,
   },
   {
     id:4, defaultName:'茉莉', gender:'female',
@@ -395,7 +398,8 @@ const CHARS = [
       <path d="M36,38 Q18,90 22,200" stroke="#3d1c00" stroke-width="26" fill="none" stroke-linecap="round"/>
       <path d="M124,38 Q142,90 138,200" stroke="#3d1c00" stroke-width="26" fill="none" stroke-linecap="round"/>`,
     hairFront:`
-      <path d="M52,20 Q80,5 108,20 Q104,46 98,54 Q92,34 80,32 Q68,34 62,54 Q56,46 52,20Z" fill="#3d1c00"/>`,
+      <path d="M44,22 Q60,6 78,12 Q76,32 70,52 Q62,38 52,30 Q46,26 44,22Z" fill="#3d1c00"/>
+      <path d="M116,22 Q100,6 82,12 Q84,32 90,52 Q98,38 108,30 Q114,26 116,22Z" fill="#3d1c00"/>`,
   },
   {
     id:5, defaultName:'晴天', gender:'female',
@@ -406,12 +410,14 @@ const CHARS = [
     skin:'#FFE0BD', eyeColor:'#7a4000',
     hairBack:`
       <ellipse cx="80" cy="46" rx="42" ry="43" fill="#FF6B2B"/>
-      <ellipse cx="30" cy="82" rx="17" ry="24" fill="#FF6B2B"/>
-      <ellipse cx="130" cy="82" rx="17" ry="24" fill="#FF6B2B"/>`,
+      <ellipse cx="28" cy="90" rx="15" ry="28" fill="#FF6B2B" transform="rotate(-10,28,90)"/>
+      <ellipse cx="132" cy="90" rx="15" ry="28" fill="#FF6B2B" transform="rotate(10,132,90)"/>`,
     hairFront:`
       <path d="M44,22 Q80,5 116,22 Q112,47 104,54 Q97,33 80,31 Q63,33 56,54 Q48,47 44,22Z" fill="#FF6B2B"/>
-      <circle cx="38" cy="54" r="7" fill="#FF6B2B"/>
-      <circle cx="122" cy="54" r="7" fill="#FF6B2B"/>`,
+      <circle cx="38" cy="56" r="8" fill="#FF6B2B"/>
+      <circle cx="122" cy="56" r="8" fill="#FF6B2B"/>
+      <circle cx="38" cy="56" r="5" fill="#e85a00" opacity="0.8"/>
+      <circle cx="122" cy="56" r="5" fill="#e85a00" opacity="0.8"/>`,
   },
   {
     id:6, defaultName:'露露', gender:'female',
@@ -421,12 +427,13 @@ const CHARS = [
     birthday:'03月01日', zodiac:'双鱼座',
     skin:'#FFDBB4', eyeColor:'#5a3200',
     hairBack:`
-      <ellipse cx="80" cy="52" rx="46" ry="48" fill="#D4A017"/>
-      <path d="M34,42 Q28,74 30,108" stroke="#D4A017" stroke-width="16" fill="none" stroke-linecap="round"/>
-      <path d="M126,42 Q132,74 130,108" stroke="#D4A017" stroke-width="16" fill="none" stroke-linecap="round"/>`,
+      <ellipse cx="80" cy="52" rx="46" ry="46" fill="#D4A017"/>
+      <path d="M34,44 Q26,70 30,90 Q32,94 38,92" stroke="#D4A017" stroke-width="18" fill="none" stroke-linecap="round"/>
+      <path d="M126,44 Q134,70 130,90 Q128,94 122,92" stroke="#D4A017" stroke-width="18" fill="none" stroke-linecap="round"/>`,
     hairFront:`
       <path d="M44,20 Q80,4 116,20 Q112,45 104,53 Q98,33 80,31 Q66,33 60,50 Q50,42 44,20Z" fill="#D4A017"/>
-      <path d="M44,22 Q60,12 72,22" stroke="#c58c10" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+      <path d="M44,22 Q38,34 42,46" stroke="#c58c10" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M116,22 Q122,34 118,46" stroke="#c58c10" stroke-width="3" fill="none" stroke-linecap="round"/>`,
   },
   {
     id:7, defaultName:'冬雪', gender:'female',
@@ -453,12 +460,14 @@ const CHARS = [
     skin:'#FFE0BD', eyeColor:'#cc4466',
     hairBack:`
       <ellipse cx="80" cy="44" rx="45" ry="50" fill="#FF69B4"/>
-      <path d="M35,38 Q16,88 22,180" stroke="#FF69B4" stroke-width="25" fill="none" stroke-linecap="round"/>
-      <path d="M125,38 Q144,88 138,180" stroke="#FF69B4" stroke-width="25" fill="none" stroke-linecap="round"/>`,
+      <path d="M35,38 Q16,80 26,122 Q16,144 24,175" stroke="#FF69B4" stroke-width="24" fill="none" stroke-linecap="round"/>
+      <path d="M125,38 Q144,80 134,122 Q144,144 136,175" stroke="#FF69B4" stroke-width="24" fill="none" stroke-linecap="round"/>`,
     hairFront:`
       <path d="M44,20 Q80,4 116,20 Q112,48 104,56 Q98,36 80,34 Q62,36 56,56 Q48,48 44,20Z" fill="#FF69B4"/>
-      <path d="M56,36 Q58,48 62,42" stroke="#e0509a" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <path d="M100,36 Q102,48 98,42" stroke="#e0509a" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+      <path d="M50,32 Q54,42 50,50" stroke="#e0509a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+      <path d="M62,36 Q66,46 62,54" stroke="#e0509a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M98,36 Q102,46 98,54" stroke="#e0509a" stroke-width="2" fill="none" stroke-linecap="round"/>
+      <path d="M110,32 Q114,42 110,50" stroke="#e0509a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
   },
   {
     id:9, defaultName:'星辰', gender:'female',
@@ -474,8 +483,9 @@ const CHARS = [
       <path d="M91,4 Q95,20 90,48" stroke="#1a0a00" stroke-width="5" fill="none"/>`,
     hairFront:`
       <path d="M44,22 Q80,5 116,22 Q112,50 104,58 Q98,38 80,36 Q62,38 56,58 Q48,50 44,22Z" fill="#1a0a00"/>
-      <circle cx="80" cy="14" r="8" fill="#2d2d2d"/>
-      <circle cx="80" cy="14" r="5" fill="#1a0a00"/>`,
+      <ellipse cx="80" cy="12" rx="10" ry="10" fill="#2a2a2a"/>
+      <ellipse cx="80" cy="12" rx="7" ry="7" fill="#1a0a00"/>
+      <ellipse cx="80" cy="12" rx="10" ry="10" fill="none" stroke="#444" stroke-width="2"/>`,
   },
   {
     id:10, defaultName:'小风', gender:'male',
@@ -490,9 +500,10 @@ const CHARS = [
       <path d="M122,40 Q130,62 128,86" stroke="#C4862A" stroke-width="12" fill="none" stroke-linecap="round"/>`,
     hairFront:`
       <path d="M46,24 Q80,8 114,24 Q110,44 103,50 Q96,32 80,30 Q64,32 57,50 Q50,44 46,24Z" fill="#C4862A"/>
-      <path d="M55,20 Q62,8 68,18" fill="#C4862A"/>
-      <path d="M92,18 Q98,8 105,20" fill="#C4862A"/>
-      <path d="M72,12 Q80,2 88,12" fill="#C4862A"/>`,
+      <path d="M54,20 Q60,6 68,18" fill="#C4862A"/>
+      <path d="M70,12 Q78,0 88,12" fill="#C4862A"/>
+      <path d="M90,18 Q98,6 106,20" fill="#C4862A"/>
+      <path d="M46,26 Q42,14 50,22" fill="#C4862A"/>`,
   },
   {
     id:11, defaultName:'阿俊', gender:'male',
@@ -506,8 +517,9 @@ const CHARS = [
       <path d="M38,40 Q30,65 34,90" stroke="#1a1a3a" stroke-width="12" fill="none" stroke-linecap="round"/>
       <path d="M122,40 Q130,65 126,90" stroke="#1a1a3a" stroke-width="12" fill="none" stroke-linecap="round"/>`,
     hairFront:`
-      <path d="M38,28 Q58,8 90,16 Q103,22 114,28 Q110,46 103,52 Q92,36 80,34 Q60,34 48,50 Q40,42 38,28Z" fill="#1a1a3a"/>
-      <path d="M42,32 Q62,16 80,22" stroke="#2d2d5a" stroke-width="3" fill="none" stroke-linecap="round"/>`,
+      <path d="M36,26 Q54,8 88,14 Q102,20 114,28 Q110,46 103,52 Q92,36 80,34 Q58,34 46,50 Q38,42 36,26Z" fill="#1a1a3a"/>
+      <path d="M40,30 Q58,16 78,22" stroke="#2d2d5a" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <path d="M44,38 Q60,28 76,34" stroke="#2d2d5a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`,
   },
   {
     id:12, defaultName:'小树', gender:'male',
@@ -878,6 +890,9 @@ function buildCharSVG(charId, outfit, w=140, expression=0) {
     layers.push(CLOTHING.bag[outfit.bag].svg);
   }
 
+  // 后发（先于脖子/头渲染，使脸部肤色正确覆盖在发色之上）
+  layers.push(char.hairBack);
+
   // 脖子
   if (isMale) {
     layers.push(`<rect x="70" y="88" width="20" height="16" fill="${skin}"/>`);
@@ -887,9 +902,6 @@ function buildCharSVG(charId, outfit, w=140, expression=0) {
 
   // 头
   layers.push(`<ellipse cx="80" cy="52" rx="36" ry="38" fill="${skin}"/>`);
-
-  // 后发
-  layers.push(char.hairBack);
 
   // 表情
   layers.push(getFaceSVG(char.eyeColor, expression));
